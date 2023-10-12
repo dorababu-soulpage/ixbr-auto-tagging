@@ -6,7 +6,8 @@ from urllib.parse import urlsplit
 from bs4 import BeautifulSoup
 from utils import (
     get_db_record,
-    update_db_record
+    update_db_record,
+    s3_uploader
 )
 from threading import Thread
 from auto_tagging.tagging import auto_tagging
@@ -42,7 +43,7 @@ def auto_tagging_thread(file_id:int):
         with open(filename, "w") as file:
             file.write(html_content)
     
-        output_html = "auto_tagging(filename)"
+        output_html = auto_tagging(filename)
         try:
             with open(output_html, "rb") as file:
                 body = io.BytesIO(file.read())

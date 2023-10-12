@@ -10,7 +10,7 @@ import numpy as np
 from bs4 import BeautifulSoup, Comment
 from nltk.tokenize import sent_tokenize
 
-nltk.download('punkt')
+# nltk.download('punkt')
 
 # utility imports
 from .utils import read_html_file, split_input_html, modify_coverpage, add_commas, extract_number_from_text, process_table_results,modify_statement_tabels,\
@@ -101,7 +101,7 @@ def auto_tagging(html_file):
     print(len(final_result))
     final_result = BeautifulSoup(final_result)
 
-    dest_path = os.path.join(parent_dir, os.path.basename(html_file))
+    dest_path = os.path.join(parent_dir, f"auto_tagging_{os.path.basename(html_file)}")
     with open(dest_path, "wb") as file:
         file.write(final_result.encode("utf-8"))
 

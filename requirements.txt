@@ -14,3 +14,5 @@ flask==3.0.0
 IPython==8.12.3 
 starlette==0.22.0
 pydantic==1.6.2
+python-dotenv==1.0.0
+lxml==4.9.3

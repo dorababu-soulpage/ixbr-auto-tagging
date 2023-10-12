@@ -10,6 +10,9 @@ COPY . /app
 # Install dependencies
 RUN pip install -r requirements.txt
 
+RUN python3 -m nltk.downloader punkt
+RUN python3 -m nltk.downloader averaged_perceptron_tagger
+
 # upgrade pip
 RUN pip3 install --upgrade pip
 
