@@ -1,0 +1,16 @@
+psycopg2-binary==2.9.9
+# auto-tagging
+beautifulsoup4==4.12.2
+nltk==3.8.1
+pandas==2.0.1
+torch==2.0.1 #installs +cpu version locally
+numpy
+transformers==4.29.2
+lightning==2.0.1
+torchmetrics==0.11.4
+python-decouple==3.8
+boto3==1.28.62
+flask==3.0.0
+IPython==8.12.3 
+starlette==0.22.0
+pydantic==1.6.2

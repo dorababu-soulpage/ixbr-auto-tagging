@@ -1,0 +1,7 @@
+__pycache__
+venv/
+.env
+data
+Models/
+Table_raw_results/
+*.log
