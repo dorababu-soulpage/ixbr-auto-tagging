@@ -27,10 +27,11 @@ storage_dir = Path(storage_dir).absolute()
 def auto_tagging_thread(file_id:int):
     record = get_db_record(file_id = file_id)
     html = record.get("url", "")
+
     output_dir = f"{storage_dir}/html/{Path(html).stem}".replace("_","-")
     # create viewer folder
     Path(f"{output_dir}").mkdir(parents=True, exist_ok=True)
-    filename = f"{output_dir}/{Path(html).stem}.html"
+    filename = f"{output_dir}/{Path(html).stem}_1.html"
         # Send an HTTP GET request to the URL
     response = requests.get(html)
 
@@ -53,7 +54,7 @@ def auto_tagging_thread(file_id:int):
                 path = Path(parsed_url.path)
                 filename = path.name
                 url = s3_uploader(name=filename, body=body)
-                update_db_record(file_id, {"auto_tagging_url":url})
+                update_db_record(file_id, {"url":url, "inAutoTaggingProcess":False})
         except Exception as e:
             return {"error": "auto_tagging_html file is not generated"}, 400
     return {"error": "html file is not found"}, 400
