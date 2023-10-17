@@ -1,9 +1,7 @@
-import boto3
-import io, os, requests
+import io, requests
 from pathlib import Path
 from decouple import config
 from urllib.parse import urlsplit
-from bs4 import BeautifulSoup
 from utils import (
     get_db_record,
     update_db_record,
@@ -11,7 +9,7 @@ from utils import (
 )
 from threading import Thread
 from auto_tagging.tagging import auto_tagging
-from flask import Flask, request, redirect, url_for
+from flask import Flask, request
 
 
 app = Flask(__name__)
@@ -24,9 +22,12 @@ storage_dir = Path(storage_dir).absolute()
 
 
 
-def auto_tagging_thread(file_id:int):
-    record = get_db_record(file_id = file_id)
-    html = record.get("url", "")
+def auto_tagging_thread(file_id:int, url:str):
+    try:
+        record = get_db_record(file_id = file_id)
+        html = record.get("url", "")
+    except:
+        html = url
 
     output_dir = f"{storage_dir}/html/{Path(html).stem}".replace("_","-")
     # create viewer folder
@@ -59,12 +60,17 @@ def auto_tagging_thread(file_id:int):
             return {"error": "auto_tagging_html file is not generated"}, 400
     return {"error": "html file is not found"}, 400
 
+@app.route("/")
+def index():
+    return {"message":"welcome to auto-tagging"}
+
 @app.route("/api/auto-tagging", methods=["POST"])
 def auto_tagging_view():
     
     file_id = request.json.get("file_id", None)
+    file_url = request.json.get("file_url", None)
     # run process in background
-    thread = Thread(target=auto_tagging_thread, args=(file_id,))
+    thread = Thread(target=auto_tagging_thread, args=(file_id,file_url))
     thread.start()
     return {"message":"We will notify you once auto tagging is done."} , 200
 

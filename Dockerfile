@@ -7,14 +7,15 @@ WORKDIR /app
 # Copy your application files into the container
 COPY . /app
 
+# upgrade pip
+RUN pip3 install --upgrade pip
+
 # Install dependencies
 RUN pip install -r requirements.txt
 
 RUN python3 -m nltk.downloader punkt
 RUN python3 -m nltk.downloader averaged_perceptron_tagger
 
-# upgrade pip
-RUN pip3 install --upgrade pip
 
 # Expose the port your Flask app will run on
 EXPOSE 5000
