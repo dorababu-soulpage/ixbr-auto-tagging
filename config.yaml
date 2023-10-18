@@ -1,0 +1,8 @@
+IXBRL_MODELS:
+  Tokenizer: "soleimanian/financial-roberta-large-sentiment"
+  Dei_Model: "Models1/DEI_Model"
+  Notes_Model: "Models1/Notes_Model"
+  Table_Model: "Models1/Table_inline_Model/SECtag_RarelabelModel-epoch=39-val_loss=0.26.ckpt"
+
+LABLES:
+  Filepath: "Models1/Table_Inline_Model/labels_list.txt"

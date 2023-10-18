@@ -21,12 +21,14 @@ from bs4 import BeautifulSoup, Comment
 from nltk.tokenize import sent_tokenize
 from .utils import clean_text
 
-nltk.download('punkt')
+nltk.download("punkt")
 
 import warnings
+
 warnings.filterwarnings("ignore")
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -35,11 +37,11 @@ def get_text_outside_table(content_between_comments):
     removes table from the page, returns remaining text."""
     soup1 = BeautifulSoup(content_between_comments, "lxml")
     # Remove all the tables from the HTML content
-    for table in soup1.find_all('table'):
+    for table in soup1.find_all("table"):
         table.extract()
 
     # Remove all the elements with table-related tags from the HTML content
-    for tag in ['tbody', 'thead', 'tfoot', 'tr', 'th', 'td']:
+    for tag in ["tbody", "thead", "tfoot", "tr", "th", "td"]:
         for element in soup1.find_all(tag):
             element.extract()
 
@@ -58,9 +60,9 @@ def process_text(paragraph):
     for sentence in sentences:
         sentence_ip_text = []
         for token in sentence.split(" "):
-            strip_token = token.replace("$","")
+            strip_token = token.replace("$", "")
             if strip_token.endswith("."):
-                strip_token = strip_token.replace(".","")
+                strip_token = strip_token.replace(".", "")
             sentence_ip_text.append(strip_token)
 
         if len(list(set(sentence_ip_text))) > 1:
@@ -68,10 +70,13 @@ def process_text(paragraph):
 
     return ip_text
 
+
 def get_NER_Data(html_data):
     """Takes html as input, finds html code of text outside tabels,
     finds P/span tags, extract, cleans, splits the text."""
-    logger.info("3.1. Started collecting entire text, not just pages with notes heading..")
+    logger.info(
+        "3.1. Started collecting entire text, not just pages with notes heading.."
+    )
     total_ip_texts = []
     # this eliminates tables in Notes section
     text_content, html_content = get_text_outside_table(html_data)
@@ -87,7 +92,7 @@ def get_NER_Data(html_data):
                 ip_text = clean_text(ip_text)
                 total_ip_texts.append(ip_text.split(" "))
 
-    else: # else if span tags found
+    else:  # else if span tags found
         for span in html_content.find_all("span"):
             text = span.get_text()
 
@@ -120,7 +125,7 @@ def get_NER_Data(html_data):
 
 
 def clean_notes_outputs(inputs, outputs):
-    """Function to filter out sentences with 
+    """Function to filter out sentences with
     only "O" label entirely"""
     new_inputs = []
     new_outputs = []

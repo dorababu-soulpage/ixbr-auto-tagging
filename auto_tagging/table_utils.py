@@ -332,7 +332,7 @@ def get_cleaned_tags_data(text, dataframe, statement_name):
     return total_df_context_rows, total_table_columns
 
 
-def save_html_statements_tables(html_data, save_path):
+def save_html_statements_tables(html_data, save_path, type="8k_or_10Q"):
     """This function Detects Those statements table we want,
     and process them, saves them to the folder 'save_path'. 
     """
@@ -351,8 +351,12 @@ def save_html_statements_tables(html_data, save_path):
     # split html page by comments
     if comments:
         logger.info("2.1 Comment tags found...")
+        if type == "10K":
+            comments = comments[:]
+        else:
+            comments = comments[:15]
         # Get the content between each pair of comments
-        for i in range(len(comments[:15]) - 1): # looks only in the first 15 pages, since 10q
+        for i in range(len(comments) - 1): # looks only in the first 15 pages, since 10q
             start_comment = comments[i]
             end_comment = comments[i + 1]
 
@@ -420,7 +424,11 @@ def save_html_statements_tables(html_data, save_path):
         if page_break_tags:
             logger.info("2.1 Header tags found...")
             # get the content between each paif of page_break_tags
-            for i in range(len(page_break_tags[:15]) - 1):
+            if type == "10K":
+                page_break_tags = page_break_tags[:]
+            else:
+                page_break_tags = page_break_tags[:15]
+            for i in range(len(page_break_tags) - 1):
                 start_page_break = page_break_tags[i]
                 end_page_break = page_break_tags[i + 1]
 
@@ -514,6 +522,7 @@ def arrange_rows_with_context(save_folder):
                                     dataframe = dataframe.replace(np.nan, '', regex=True)
 
                                     text = read_text_file(text_file_path)
+                                    logger.info(f"2.3.1 printing text, dataframe and table names {text},{dataframe},{statement_name}")
                                     data, columns = get_cleaned_tags_data(text, dataframe , statement_name)
 
                                     all_tables_data.append(data)                                   

@@ -18,6 +18,8 @@ import re
 import random
 import string
 import uuid 
+import yaml
+
 
 from bs4 import BeautifulSoup, Comment
 
@@ -25,11 +27,23 @@ from bs4 import BeautifulSoup, Comment
 import warnings
 warnings.filterwarnings("ignore")
 
+
+def load_yaml(file_path):
+    with open(file_path, 'r') as file:
+        yaml_obj = yaml.safe_load(file)
+    return yaml_obj
+
+
 def read_html_file(html_path):
     """fucntion to read html file"""
     with open(html_path, 'r', encoding="unicode-escape") as file:
         html_data = file.read()
     return html_data
+
+def read_text_file(file_path):
+    with open(file_path,"r") as fp:
+        data = fp.read()
+    return data
 
 def extract_content_until_comment(start_comment):
     """function to get html code until the page break"""
@@ -181,7 +195,9 @@ def modify_coverpage(html_string, coverpage_output):
     ml_tags = sum(ml_tags,[])
     ml_tags = [[row[0], "dei:"+row[1]] for row in ml_tags]
     # ml_tags = [[row[0], row[1], f'<font data-autotag="true" id=xdx_90{random.choice(string.ascii_letters)}_e{row[1]}_{uuid.uuid1()}>{row[0]}</font>'] for row in ml_tags]
-    ml_tags = [[row[0], row[1], f'<font data-autotag="true" id=xdx_90{random.choice(string.ascii_letters)}_e{row[1]}_{uuid.uuid1()}>{row[0]}</font>'] for row in ml_tags]
+    uuid_result = uuid.uuid1()
+    uuid_result = str(uuid_result).replace("-","")
+    ml_tags = [[row[0], row[1], f'<font data-autotag="true" id=xdx_90{random.choice(string.ascii_letters)}_e{row[1]}_{uuid_result}>{row[0]}</font>'] for row in ml_tags]
     
     # sample
     # result = html_string.replace("10-Q", '<font id="dei:DocumentType">10-Q</font>')
@@ -197,7 +213,9 @@ def modify_statement_tabels( second_half, Table_output):
     and replace them with <font> tag"""
     # table 
     Table_output1 = [list(list(dict_item.items())[0]) for dict_item in Table_output]
-    Table_output1 = [[row[0], row[1], f'<font data-autotag="true" id=xdx_90{random.choice(string.ascii_letters)}_e{row[1]}_{uuid.uuid1()}>{row[0]}</font>'] for row in Table_output1]
+    uuid_result = uuid.uuid1()
+    uuid_result = str(uuid_result).replace("-","")
+    Table_output1 = [[row[0], row[1], f'<font data-autotag="true" id=xdx_90{random.choice(string.ascii_letters)}_e{row[1]}_{uuid_result}>{row[0]}</font>'] for row in Table_output1]
     
     for row in Table_output1:
         second_half = second_half.replace(">"+row[0]+"<", ">"+row[2]+"<")
@@ -210,7 +228,9 @@ def modify_notespages(second_half, Notes_output, table_output_values):
     # Notes
     ml_tags1 = [tuple(t.items())[0] for t in Notes_output]
     ml_tags1 = [[row[0], "us-gaap:"+row[1]] for row in ml_tags1]
-    ml_tags1 = [[row[0], row[1], f'<font data-autotag="true" id=xdx_90{random.choice(string.ascii_letters)}_e{row[1]}_{uuid.uuid1()}>{row[0]}</font>'] for row in ml_tags1 if row[0] not in table_output_values] # to avoid duplicating labels
+    uuid_result = uuid.uuid1()
+    uuid_result = str(uuid_result).replace("-","")
+    ml_tags1 = [[row[0], row[1], f'<font data-autotag="true" id=xdx_90{random.choice(string.ascii_letters)}_e{row[1]}_{uuid_result}>{row[0]}</font>'] for row in ml_tags1 if row[0] not in table_output_values] # to avoid duplicating labels
 
     for row in ml_tags1:
         second_half = second_half.replace(">"+row[0]+"<", ">"+row[2]+"<")
