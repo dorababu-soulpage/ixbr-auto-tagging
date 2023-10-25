@@ -159,7 +159,7 @@ class NameMappingModel(pl.LightningModule):
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 modeleval = NameMappingModel.load_from_checkpoint(
-    checkpoint_path="Models1\Table_inline_Model\SECtag_RarelabelModel-epoch=39-val_loss=0.26.ckpt",
+    checkpoint_path="Models1/Table_Inline_Model/SECtag_RarelabelModel-epoch=39-val_loss=0.26.ckpt",
     labels=labels,
     label2id=label2id,
     id2label=id2label,

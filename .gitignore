@@ -2,6 +2,6 @@ __pycache__
 venv/
 .env
 data
-Models/
+Models1/
 Table_raw_results/
 *.log
