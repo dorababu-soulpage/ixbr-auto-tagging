@@ -17,4 +17,4 @@ pydantic==1.6.2
 python-dotenv==1.0.0
 requests
 lxml==4.9.3
-cleantext
+clean-text==0.6.0

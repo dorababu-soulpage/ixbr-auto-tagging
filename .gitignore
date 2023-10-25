@@ -4,4 +4,5 @@ venv/
 data
 Models1/
 Table_raw_results/
-*.log
+logs/
+.vscode/
