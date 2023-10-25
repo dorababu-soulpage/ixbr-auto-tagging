@@ -5,20 +5,19 @@ import shutil
 import logging
 import datetime
 
+
 import pandas as pd
 import numpy as np
 from bs4 import BeautifulSoup, Comment
 from nltk.tokenize import sent_tokenize
 
-# nltk.download('punkt')
+nltk.download("punkt")
 
 # utility imports
 from .utils import (
     read_html_file,
     split_input_html,
     modify_coverpage,
-    add_commas,
-    extract_number_from_text,
     process_table_results,
     modify_statement_tabels,
     process_notes_results,
@@ -30,14 +29,16 @@ from .dei_utils import (
     post_process_tags,
     format_processed_result,
 )
-from .table_utils import save_html_statements_tables, arrange_rows_with_context
+from .table_utils import (
+    save_html_statements_tables,
+    arrange_rows_with_context,
+    clean_results,
+)
 from .notes_utils import get_NER_Data, clean_notes_outputs
-
 
 # ml model imports
 from .modelling import Xbrl_Tag
 from .table_modelling import predict_table_tags
-
 
 # get current date
 current_date = datetime.date.today()
@@ -45,7 +46,7 @@ current_date = current_date.strftime("%d-%m-%Y")
 
 # logging.basicConfig(filemode=)
 logging.basicConfig(
-    filename=f"app_log_{current_date}.log",
+    filename=os.path.join("logs", f"app_log_{current_date}.log"),
     filemode="w",
     format="%(asctime)s - %(levelname)s- %(message)s",
     datefmt="%d-%b-%y %H:%M:%S",
@@ -57,7 +58,6 @@ def auto_tagging(html_file, type):
     xbrl_tag = Xbrl_Tag()
     html_path = html_file
     type = type
-
     parent_dir = os.path.dirname(html_path)
     dest_path = os.path.join(parent_dir, "copied_html.html")
     shutil.copy(html_path, dest_path)
@@ -69,7 +69,6 @@ def auto_tagging(html_file, type):
     logging.info("1.1 Started predicting DEI tags.....")
     original_inputs, inputs, outputs = xbrl_tag.predict_dei_tags(total_rows)
     inputs, outputs = remove_unpredicted_rows(inputs, outputs)
-
     logging.info("1.2. Started Post processing DEI Tags.....")
     processed_result = post_process_tags(inputs, outputs)
     coverapge_results = format_processed_result(processed_result, original_inputs)
@@ -90,6 +89,7 @@ def auto_tagging(html_file, type):
     data, columns, table_names = arrange_rows_with_context(save_path)
     inputs, outputs = predict_table_tags(data)
     table_outputs = process_table_results(table_names, columns, inputs, outputs)
+    table_outputs = clean_results(table_outputs)
 
     ### 3.Notes
     logging.info("3. Processing Notes in Filings.......")
@@ -103,6 +103,7 @@ def auto_tagging(html_file, type):
     inputs, outputs = clean_notes_outputs(inputs, outputs)
     table_output_values = [key for row in table_outputs for key, val in row.items()]
     Notes_outputs = process_notes_results(inputs, outputs)
+    Notes_outputs = clean_results(Notes_outputs)
     logging.shutdown()
 
     # #######################################################

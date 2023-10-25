@@ -8,7 +8,7 @@ Description:
 Takeaways:
     - Table processing is a Complex case.
     - one should run these functionalities alone in jupyter notebook with debug statements for better understanding.
-    - remove empty columns, cleaning existing columns, remvoing double span column names.
+    - remove empty columns, cleaning existing columns, removing double span column names.
     - stripping "," from values to normalize them.
 
 Author: purnasai@soulpage
@@ -43,6 +43,15 @@ def read_text_file(text_file_path):
         text = fp.readlines()
     text = [literal_eval(text_row) for text_row in text]
     return text
+
+
+def clean_results(results):
+    # this is to avoid keys with single val i.e
+    #  {'0': 'us-gaap:CommonStocksIncludingAdditionalPaidInCapital'}, 
+    # with search and replace, it replaces where ever it sees 0 in html string
+    # which is not good. so cleaning them is better.
+    results = [pair for pair in results for k,v in pair.items() if len(k)>1]
+    return results
 
 def get_text_outside_table(content_between_comments):
     """Function to get all the text outside the table in a page"""

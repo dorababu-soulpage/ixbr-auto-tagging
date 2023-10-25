@@ -29,11 +29,10 @@ from bs4 import BeautifulSoup, Comment
 from .utils import clean_text
 from .utils import extract_content_until_comment, read_html_file
 
-nltk.download("punkt")
+nltk.download('punkt')
 warnings.filterwarnings("ignore")
 
 import logging
-
 logger = logging.getLogger(__name__)
 
 
@@ -43,12 +42,12 @@ def collect_tokens(divs):
     splits, cleans them"""
     inputs = []
 
-    logging.info("1.0. collecting tokens...............")
+    logging.info('1.0. collecting tokens...............')
     for div in divs:
         if div.find("span") and not div.find("table"):
             logger.info("SPan tags found to collect text/tokens..")
             text = div.get_text()
-
+                        
             # the below is creating \ax0 kind of symbols in text
             sentences = sent_tokenize(text)
             sentences = [clean_text(sentence) for sentence in sentences]
@@ -57,15 +56,11 @@ def collect_tokens(divs):
             for sentence in sentences:
                 # so clean it
                 sentence_tokens = sentence.split(" ")
-                sentence_tokens = [
-                    clean_text(token)
-                    for token in sentence_tokens
-                    if len(clean_text(token)) >= 1
-                ]
+                sentence_tokens = [clean_text(token) for token in sentence_tokens if len(clean_text(token)) >= 1]
                 ip_text.append(sentence_tokens)
 
             inputs.extend(ip_text)
-
+                    
         if div.find("span") and div.find("table"):
             # if span and table tag found then extract table information
             table = div.find("table")
@@ -86,19 +81,15 @@ def collect_tokens(divs):
                     for sentence in sentences:
                         # so clean it
                         sentence_tokens = sentence.split(" ")
-                        sentence_tokens = [
-                            clean_text(token)
-                            for token in sentence_tokens
-                            if len(clean_text(token)) >= 1
-                        ]
+                        sentence_tokens = [clean_text(token) for token in sentence_tokens if len(clean_text(token)) >= 1]
                         ip_text.append(sentence_tokens)
-
+        
                     inputs.extend(ip_text)
-
+        
         if div.find_all("p"):
             # if <P> tag inside div tag
             for p in div.find_all("p"):
-                text = p.get_text()
+                text = p.get_text() 
 
                 # this creates special symbols like xa08
                 sentences = sent_tokenize(text)
@@ -108,18 +99,14 @@ def collect_tokens(divs):
                 for sentence in sentences:
                     # so clean it
                     sentence_tokens = sentence.split(" ")
-                    sentence_tokens = [
-                        clean_text(token)
-                        for token in sentence_tokens
-                        if len(clean_text(token)) >= 1
-                    ]
+                    sentence_tokens = [clean_text(token) for token in sentence_tokens if len(clean_text(token)) >= 1]
                     ip_text.append(sentence_tokens)
                 inputs.extend(ip_text)
-
+        
         if not div.find("span"):
             if not div.find("tr"):
                 logger.info("No span/table tags found, Extracting directly..")
-                text = div.get_text()
+                text = div.get_text() 
 
                 # this creates special symbols like xa08
                 sentences = sent_tokenize(text)
@@ -129,14 +116,10 @@ def collect_tokens(divs):
                 for sentence in sentences:
                     # so clean it
                     sentence_tokens = sentence.split(" ")
-                    sentence_tokens = [
-                        clean_text(token)
-                        for token in sentence_tokens
-                        if len(clean_text(token)) >= 1
-                    ]
+                    sentence_tokens = [clean_text(token) for token in sentence_tokens if len(clean_text(token)) >= 1]
                     ip_text.append(sentence_tokens)
                 inputs.extend(ip_text)
-
+            
             elif div.find_all("tr"):
                 # if table tag found
                 for table_row in div.find_all("tr"):
@@ -154,20 +137,27 @@ def collect_tokens(divs):
                         for sentence in sentences:
                             # so clean it
                             sentence_tokens = sentence.split(" ")
-                            sentence_tokens = [
-                                clean_text(token)
-                                for token in sentence_tokens
-                                if len(clean_text(token)) >= 1
-                            ]
+                            sentence_tokens = [clean_text(token) for token in sentence_tokens if len(clean_text(token)) >= 1]
                             ip_text.append(sentence_tokens)
                         inputs.extend(ip_text)
+
 
         else:
             inputs = []
             logger.warning("No span/div/table tags found. Text collectiong Failed")
-
+    
     return inputs
 
+def process_p_tags(page_html_data):
+    ps = page_html_data.find_all("p")
+    ps = ps[1:]
+    inputs = collect_tokens(ps)
+
+    tables = page_html_data.find_all("table")
+    inputs1 = collect_tokens(tables)
+
+    total_rows = inputs + inputs1
+    return total_rows
 
 def split_page_and_extract_text(html_path):
     """Takes html file as input, read the data,
@@ -175,71 +165,52 @@ def split_page_and_extract_text(html_path):
     the long html into parts. takes only first page
     & gets the text inside them."""
     html_data = read_html_file(html_path)
-    soup = BeautifulSoup(html_data, "lxml")
+    soup = BeautifulSoup(html_data, 'lxml')
 
     # Find all <!-- Field: Page; Sequence> tags
-    comments = soup.find_all(
-        string=lambda text: isinstance(text, Comment) and "Field: Page;" in text
-    )
+    comments = soup.find_all(string=lambda text: isinstance(text, Comment) and 'Field: Page;' in text)
 
     # split html page by comments
     if comments:
         logger.info("Comments found as page break")
-        for i in range(len(comments[:1])):  # considering only cover page
+        for i in range(len(comments[:1])): # considering only cover page
             start_comment = comments[i]
             content_between_comments = extract_content_until_comment(start_comment)
-            page_html_data = BeautifulSoup(content_between_comments, "lxml")
+            content_between_comments = content_between_comments.encode("utf-8")
+            page_html_data =  BeautifulSoup(content_between_comments, "lxml", from_encoding="utf-8")
 
             divs = page_html_data.find_all("div")
-            divs = divs[
-                1:
-            ]  # avoiding first div tag to avoid unncessary text: mmm-20230331.htm
+            divs = divs[1:] # avoiding first div tag to avoid unncessary text: mmm-20230331.htm
             if divs and len(divs) > 10:
                 logger.info("Only div tags found inside, collecting text...")
                 inputs = collect_tokens(divs)
                 total_rows = inputs
+                if total_rows == []:
+                    logger.info("No, all divs empty. found P tags inside, collecting text...")
+                    total_rows = process_p_tags(page_html_data)
 
             elif divs and len(divs) < 10:
-                logger.info("Only P tags found inside, collecting text...")
-                ps = page_html_data.find_all("p")
-                ps = ps[1:]
-                inputs = collect_tokens(ps)
-
-                tables = page_html_data.find_all("table")
-                inputs1 = collect_tokens(tables)
-
-                total_rows = inputs + inputs1
+                    logger.info("less divs found. So finding P tags, collecting text...")
+                    total_rows = process_p_tags(page_html_data)
 
             else:
                 logger.info("Only P tags found in Else block, collecting text...")
-                ps = page_html_data.find_all("p")
-                ps = ps[1:]
+                total_rows = process_p_tags(page_html_data)
 
-                inputs = collect_tokens(ps)
-
-                tables = page_html_data.find_all("table")
-                inputs1 = collect_tokens(tables)
-
-                total_rows = inputs + inputs1
-
-    elif soup.find_all(re.compile("^hr")):
+    elif soup.find_all(re.compile('^hr')):
         logger.info("Header tag found as page break")
-        page_break_tags = soup.find_all(re.compile("^hr"))
+        page_break_tags = soup.find_all(re.compile('^hr'))
 
-        if len(page_break_tags) > 1:
-            for i in range(len(page_break_tags[:1])):  # all pages, not slicing
+        if len(page_break_tags)>1:
+            for i in range(len(page_break_tags[:1])): # all pages, not slicing
                 start_page_break = page_break_tags[i]
                 end_page_break = page_break_tags[i + 1]
 
-                content_between_page_breaks = extract_content_until_comment(
-                    start_page_break
-                )
-                page_html_data = BeautifulSoup(content_between_page_breaks)
+                content_between_page_breaks = extract_content_until_comment(start_page_break)
+                page_html_data =  BeautifulSoup(content_between_page_breaks)
 
                 divs = page_html_data.find_all("div")
-                divs = divs[
-                    1:
-                ]  # avoiding first div tag to avoid unncessary text: mmm-20230331.htm
+                divs = divs[1:] # avoiding first div tag to avoid unncessary text: mmm-20230331.htm
                 if divs:
                     inputs = collect_tokens(divs)
                     total_rows = inputs
@@ -261,15 +232,14 @@ def remove_unpredicted_rows(total_reconstructed_sentence, total_reconstructed_la
     """Method to filter out the rows that were all tagged with "O" label"""
     new_words = []
     new_labels = []
-    for in_row, out_row in zip(
-        total_reconstructed_sentence, total_reconstructed_labels
-    ):
+    for in_row, out_row in zip(total_reconstructed_sentence, total_reconstructed_labels):
         words = in_row.strip().split(" ")[1:-1]
         labels = out_row[1:-1]
         if len(words) == len(labels):
-            if list(set(labels))[0] != "O":
-                new_words.extend(words)
-                new_labels.extend(labels)
+            if len(words)>1 and len(labels)>1:
+                # if list(set(labels))[0] != "O":
+                    new_words.extend(words)
+                    new_labels.extend(labels)
 
     return new_words, new_labels
 
@@ -295,9 +265,8 @@ def post_process_tags(tokens, tags):
     original_text
     return original_text
 
-
 def format_processed_result(processed_result, total_given_input):
-    """This maps/places all values&their tags to the original row,
+    """ This maps/places all values&their tags to the original row,
     i.e like below
     {'1025 Connecticut Avenue NW Suite 1000': [('1025 Connecticut Avenue',
     'EntityAddressAddressLine1'),
@@ -306,7 +275,7 @@ def format_processed_result(processed_result, total_given_input):
     output_dict = {}
     for orig_row in total_given_input:
         for item in processed_result:
-            if item[0] in orig_row and len(item[0]) > 1:
+            if item[0] in orig_row and len(item[0])>1:
                 if orig_row not in output_dict:
                     output_dict[orig_row] = [item]
                 else:

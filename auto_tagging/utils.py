@@ -22,6 +22,7 @@ import yaml
 
 
 from bs4 import BeautifulSoup, Comment
+from cleantext import clean
 
 
 import warnings
@@ -70,9 +71,9 @@ def extract_content_between_comments(start_comment, end_comment):
 def clean_text(text):
     """fucntion to clean text to remove 
     special symbols and new line characters"""
-    text = text.replace("\x92", "'")
-    text = text.replace("\xa0", " ")
+    # text = text.encode('utf-8').decode('utf-8')
     text = text.replace("\n"," ")
+    text = clean(text, lower=False)
     return text
 
 
@@ -103,7 +104,7 @@ def split_input_html(html_path):
     with open(html_path, 'r', encoding="unicode-escape") as file:
         html_data = file.read()
     
-    soup = BeautifulSoup(html_data, 'html.parser', ) #preserve_whitespace=True
+    soup = BeautifulSoup(html_data, 'lxml', ) #preserve_whitespace=True
     # Find all <!-- Field: Page; Sequence> tags
     comments = soup.find_all(string=lambda text: isinstance(text, Comment) and 'Field: Page;' in text)
 
@@ -193,18 +194,33 @@ def modify_coverpage(html_string, coverpage_output):
     # place_holder  = '<font id="dei:DocumentType">10-Q</font>'
     ml_tags = list(coverpage_output.values())
     ml_tags = sum(ml_tags,[])
-    ml_tags = [[row[0], "dei:"+row[1]] for row in ml_tags]
-    # ml_tags = [[row[0], row[1], f'<font data-autotag="true" id=xdx_90{random.choice(string.ascii_letters)}_e{row[1]}_{uuid.uuid1()}>{row[0]}</font>'] for row in ml_tags]
+    unique_ml_tags = list({tup for tup in ml_tags})
+    ml_tags = [[row[0], "dei:"+row[1]] for row in unique_ml_tags]
     uuid_result = uuid.uuid1()
     uuid_result = str(uuid_result).replace("-","")
     ml_tags = [[row[0], row[1], f'<font data-autotag="true" id=xdx_90{random.choice(string.ascii_letters)}_e{row[1]}_{uuid_result}>{row[0]}</font>'] for row in ml_tags]
     
     # sample
     # result = html_string.replace("10-Q", '<font id="dei:DocumentType">10-Q</font>')
+    html_string = html_string.replace("\n"," ")
+    placeholders = {}
 
     for row in ml_tags:
-        # print(row[0], row[2])
-        html_string = html_string.replace(">"+row[0]+"<", ">"+row[2]+"<")
+        replaced_string = html_string.replace(">"+row[0]+"<", ">"+row[2]+"<")
+        # Check if the string was modified by the first replacement
+        if replaced_string != html_string:
+            html_string = replaced_string
+        else:
+            # If the first replacement didn't work, apply the second replacement
+            # Directly replacing is conflicting with the html format.
+            # hence using place holder to replace all of them later.
+            placeholder = f'__placeholder_{random.randint(1000, 9999)}__'
+            html_string = html_string.replace(row[0], placeholder)
+            placeholders[placeholder] = row[2]
+    
+    for placeholder, replacement in placeholders.items():
+        html_string = html_string.replace(placeholder, replacement)
+    
     return html_string
 
 
@@ -213,12 +229,39 @@ def modify_statement_tabels( second_half, Table_output):
     and replace them with <font> tag"""
     # table 
     Table_output1 = [list(list(dict_item.items())[0]) for dict_item in Table_output]
+    # this only check for unique pairs. removes if both values in 2 pairs are same
+    unique_lists = set(tuple(sublist) for sublist in Table_output1)
+    unique_Table_output1 = [list(sublist) for sublist in unique_lists]
+    
+    unique_Table_output2 = []
+    unique_vals = []
+    for pair in unique_Table_output1:
+        if pair[0] not in unique_vals:
+            unique_vals.append(pair[0])
+            unique_Table_output2.append(pair)
+
     uuid_result = uuid.uuid1()
     uuid_result = str(uuid_result).replace("-","")
-    Table_output1 = [[row[0], row[1], f'<font data-autotag="true" id=xdx_90{random.choice(string.ascii_letters)}_e{row[1]}_{uuid_result}>{row[0]}</font>'] for row in Table_output1]
+    Table_output1 = [[row[0], row[1], f'<font data-autotag="true" id=xdx_90{random.choice(string.ascii_letters)}_e{row[1]}_{uuid_result}>{row[0]}</font>'] for row in unique_Table_output2]
     
+    second_half = second_half.replace("\n"," ")
+
+    placeholders = {}
+    # for row in Table_output1:
+    #     second_half = second_half.replace(">"+row[0]+"<", ">"+row[2]+"<")
     for row in Table_output1:
-        second_half = second_half.replace(">"+row[0]+"<", ">"+row[2]+"<")
+        replaced_second_half = second_half.replace(">"+row[0]+"<", ">"+row[2]+"<")
+        if replaced_second_half != second_half:
+            second_half = replaced_second_half
+        else:
+            # replacing here itself might conflict with html like we had conflict in Coverpage
+            # So better to use placeholders.
+            placeholder = f'aa__placeholder_{str(random.randint(0, 9))+random.choice(string.ascii_letters)+str(random.randint(0, 9))+"-"+random.choice(string.ascii_letters)+"az"}__aa'
+            second_half = second_half.replace(row[0], placeholder)
+            placeholders[placeholder] = row[2]
+
+    for placeholder, replacement in placeholders.items():
+        second_half = second_half.replace(placeholder, replacement)
 
     return second_half
 
