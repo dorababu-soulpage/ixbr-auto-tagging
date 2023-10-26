@@ -18,3 +18,4 @@ python-dotenv==1.0.0
 requests
 lxml==4.9.3
 clean-text==0.6.0
+openpyxl==3.1.2

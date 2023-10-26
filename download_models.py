@@ -1,5 +1,5 @@
 import gdown
 
-id = "13s7OUrMwNc-cbAvGGkI47GF9wOcl6ra0"
+id = "1BmFWs_ZR_7jhdYPMmpgVchgP4bS-C4J5"
 output = "Models1"
 gdown.download_folder(id=id, output=output, quiet=False)

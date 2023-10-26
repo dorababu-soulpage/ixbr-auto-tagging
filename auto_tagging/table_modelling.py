@@ -34,7 +34,7 @@ yaml_obj = load_yaml(CONFIG_PATH)
 data = read_text_file(yaml_obj["LABLES"]["Filepath"])
 labels = literal_eval(data)
 
-print(type(labels), len(labels))
+print("Predefined Table labels:", len(labels))
 label2id = {lable: idx for idx, lable in enumerate(labels)}
 id2label = {index: label for label, index in label2id.items()}
 
@@ -168,6 +168,7 @@ modeleval = NameMappingModel.load_from_checkpoint(
 )
 # disable randomness, dropout, etc...
 modeleval = modeleval.eval()
+modeleval = modeleval.to(device)
 tokenizer = AutoTokenizer.from_pretrained(
     "soleimanian/financial-roberta-large-sentiment"
 )
@@ -194,6 +195,7 @@ def predict_table_tags(data):
                 tag = "us-gaap:StockholdersEquity"
                 y = label2id[tag]
                 y = torch.tensor(y).squeeze()
+                y = y.to(device)
 
                 for key in inputs:
                     inputs[key] = inputs[key].to(device)

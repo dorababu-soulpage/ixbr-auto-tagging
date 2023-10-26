@@ -26,8 +26,10 @@ from cleantext import clean
 
 
 import warnings
-
 warnings.filterwarnings("ignore")
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 def load_yaml(file_path):
@@ -183,12 +185,12 @@ def process_table_results(table_names, columns, inputs, outputs):
     """Post processing for tabel results to particular pattern."""
     table_outputs = []
     for table_name, column, row, tag in zip(table_names, columns, inputs, outputs):
-        # print(table_name, column, row, tag)
-        # print(table_name, column, row,  row.replace(table_name,"").replace(column,""), tag)
+
         row_line, output_tag = row.replace(table_name, "").replace(column, ""), tag
         numbers, output_tag = extract_number_from_text(row_line), tag
         numbers, output_tag = add_commas(str(numbers)), output_tag
         table_outputs.append({numbers: output_tag})
+
     return table_outputs
 
 
@@ -196,7 +198,6 @@ def process_notes_results(inputs, outputs):
     """Post processing for Notes results to particular pattern."""
     Notes_outputs = []
     for inp_row, oup_row in zip(inputs, outputs):
-        # print(inp_row, oup_row)
         for inp_word, oup_word in zip(inp_row.split(), oup_row):
             if oup_word != "O":
                 Notes_outputs.append({inp_word: oup_word})
@@ -206,8 +207,8 @@ def process_notes_results(inputs, outputs):
 def modify_coverpage(html_string, coverpage_output):
     """Function to use Coverpage/DEI results, search for the value in html
     and replace them with <font> tag"""
-    # cover page tags
-    # place_holder  = '<font id="dei:DocumentType">10-Q</font>'
+    logger.info("4.0. Overwriting HTML with COVERPAGE tags")
+
     ml_tags = list(coverpage_output.values())
     ml_tags = sum(ml_tags, [])
     unique_ml_tags = list({tup for tup in ml_tags})
@@ -250,7 +251,8 @@ def modify_coverpage(html_string, coverpage_output):
 def modify_statement_tabels(second_half, Table_output):
     """Function to use Table results, search for the value in html
     and replace them with <font> tag"""
-    # table
+    logger.info("4.1. Overwriting HTML with TABLE tags")
+
     Table_output1 = [list(list(dict_item.items())[0]) for dict_item in Table_output]
     # this only check for unique pairs. removes if both values in 2 pairs are same
     unique_lists = set(tuple(sublist) for sublist in Table_output1)
@@ -301,7 +303,8 @@ def modify_statement_tabels(second_half, Table_output):
 def modify_notespages(second_half, Notes_output, table_output_values):
     """Function to use Notes results, search for the value in html
     and replace them with <font> tag"""
-    # Notes
+    logger.info("4.2. Overwriting HTML with NOTES tags")
+
     ml_tags1 = [tuple(t.items())[0] for t in Notes_output]
     ml_tags1 = [[row[0], "us-gaap:" + row[1]] for row in ml_tags1]
     uuid_result = uuid.uuid1()

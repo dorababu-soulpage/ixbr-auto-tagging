@@ -23,7 +23,6 @@ def auto_tagging_thread(file_id: int, url: str, htm_type: str):
         html = record.get("url", "")
     except:
         html = url
-    type = htm_type
     output_dir = f"{storage_dir}/html/{Path(html).stem}".replace("_", "-")
     # create viewer folder
     Path(f"{output_dir}").mkdir(parents=True, exist_ok=True)
@@ -40,7 +39,7 @@ def auto_tagging_thread(file_id: int, url: str, htm_type: str):
         with open(filename, "w") as file:
             file.write(html_content)
 
-        output_html = auto_tagging(filename, type=type)
+        output_html = auto_tagging(filename, htm_type)
         try:
             with open(output_html, "rb") as file:
                 body = io.BytesIO(file.read())
@@ -65,7 +64,7 @@ def index():
 def auto_tagging_view():
     file_id = request.json.get("file_id", None)
     file_url = request.json.get("file_url", None)
-    html_type = request.json.get("html_type", "10-Q")
+    html_type = request.json.get("html_type", None)
     # run process in background
     thread = Thread(target=auto_tagging_thread, args=(file_id, file_url, html_type))
     thread.start()
