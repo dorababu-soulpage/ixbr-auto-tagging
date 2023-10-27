@@ -143,9 +143,18 @@ def collect_tokens(divs):
 
 
         else:
-            inputs = []
-            logger.warning("No span/div/table tags found. Text collectiong Failed")
-    
+            text = div.get_text()
+            sentences = sent_tokenize(text)
+            sentences = [clean_text(sentence) for sentence in sentences]
+
+            ip_text = []
+            for sentence in sentences:
+                # so clean it
+                sentence_tokens = sentence.split(" ")
+                sentence_tokens = [clean_text(token) for token in sentence_tokens if len(clean_text(token)) >= 1]
+                ip_text.append(sentence_tokens)
+            inputs.extend(ip_text)
+            # logger.warning("No span/div/table tags found. Text collectiong Failed")
     return inputs
 
 def process_p_tags(page_html_data):
