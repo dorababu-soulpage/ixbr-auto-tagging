@@ -18,12 +18,14 @@ import os
 import torch
 import warnings
 
-from .utils import post_process, load_yaml
+from .utils import post_process, load_yaml, set_seed, get_device_to_compute
 from transformers import AutoTokenizer, AutoModelForTokenClassification
 
 warnings.filterwarnings("ignore")
 
-
+SEED= 33
+set_seed(SEED)
+device = get_device_to_compute()
 CONFIG_PATH = "config.yaml"
 yaml_obj = load_yaml(CONFIG_PATH)
 
@@ -33,7 +35,7 @@ class Xbrl_Tag():
     50 to 70 companies.
     """
     def __init__(self):
-        self.device        =  torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device        =  device
         self.dei_tokenizer =  AutoTokenizer.from_pretrained(yaml_obj["IXBRL_MODELS"]["Tokenizer"],
                                                             add_prefix_space= True,
                                                             do_lower_case = True

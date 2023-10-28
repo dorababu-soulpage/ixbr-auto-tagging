@@ -74,6 +74,7 @@ def auto_tagging(html_file, html_type):
     coverapge_results = format_processed_result(processed_result, original_inputs)
     print("Coverpage results lenght:", len(coverapge_results))
     logging.info("1.3. Completed DEI tags sucessfully")
+    logging.info(f"{coverapge_results}")
 
     ### 2.TABLE
     logging.info("2.Processing Statement tables...............")

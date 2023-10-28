@@ -19,7 +19,8 @@ import random
 import string
 import uuid
 import yaml
-
+import torch
+import numpy as np
 
 from bs4 import BeautifulSoup, Comment
 from cleantext import clean
@@ -30,6 +31,17 @@ warnings.filterwarnings("ignore")
 
 import logging
 logger = logging.getLogger(__name__)
+
+def get_device_to_compute():
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    return device
+
+def set_seed(seed):
+    torch.manual_seed(seed)
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 
 
 def load_yaml(file_path):
@@ -43,6 +55,12 @@ def read_html_file(html_path):
     with open(html_path, "r", encoding="unicode-escape") as file:
         html_data = file.read()
     return html_data
+
+
+def save_html_file(html_file_path, html_table):
+    """save html script to html page"""
+    with open(html_file_path, 'w', encoding='utf-8') as f:
+        f.write(str(html_table))
 
 
 def read_text_file(file_path):

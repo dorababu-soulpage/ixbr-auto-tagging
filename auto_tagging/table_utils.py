@@ -29,13 +29,21 @@ from ast import literal_eval
 from bs4 import BeautifulSoup, Comment
 from nltk.tokenize import sent_tokenize
 from IPython.display import display
-from .utils import extract_content_between_comments
+from .utils import extract_content_between_comments, save_html_file
 
 nltk.download("punkt")
 warnings.filterwarnings("ignore")
 
 import logging
 logger = logging.getLogger(__name__)
+
+
+## list of financial statements we are interested in
+statement_names = ["BALANCE SHEET",
+                   "STATEMENTS OF CASH FLOW",
+                   "STATEMENTS OF EQUITY",
+                   "SHAREHOLDERS’ EQUITY",
+                   "OPERATIONS AND COMPREHENSIVE"]
 
 
 def read_text_file(text_file_path):
@@ -233,11 +241,13 @@ def get_excel_statements_tables(html_table):
 
 def get_rows_in_table(html_table):
     total_rows = []
+
     for table_row in html_table.find_all("tr"):
         # if row has any text
         if table_row.get_text().strip():
             tds = table_row.find_all("td")
             row_text = []
+
             for td in tds:
                 # if it also has span tag
                 if td.find("span"):
@@ -255,9 +265,10 @@ def get_rows_in_table(html_table):
                 total_rows.append(row_text)
 
     row_lengths = [len(row) for row in total_rows]
-    # get mode of row lengths
-    mode = max(set(row_lengths), key=row_lengths.count)
-    complete_rows = [row for row in total_rows if len(row) == mode]
+    # # get mode of row lengths, This is avoiding "$" rows
+    # mode = max(set(row_lengths), key=row_lengths.count)
+    # complete_rows = [row for row in total_rows if len(row) == mode]
+    complete_rows = total_rows
     return complete_rows
 
 
@@ -300,13 +311,25 @@ def convert_float_to_int(value):
 
 
 def get_cleaned_tags_data(text, dataframe, statement_name):
+    """want to attach Table/Statement Name to every row in Table
+    for more context, so our ML Model can easily predict.
+    
+    text: every row in the text variable represents every row in statement table
+    with attached value in table along with ML/us-gaap taxonomy.
+    
+    dataframe: dataframe here is actual table in html filing retaining 0's, space's.
+
+    statement_name: is the Name of Table in html filing.
+    """
     statement_name = statement_name.lower()
     total_df_context_rows = []
     total_table_columns = []
+
     for text_row in text:
         tag_text = text_row[0]
         tag_text = " ".join([token.strip() for token in tag_text.split()])
         tag_text = re.sub(r"[,():\-]", "", tag_text)
+
         tags = text_row[1]
         tags = {val: tag for tag_item in tags for val, tag in tag_item.items()}
 
@@ -370,6 +393,9 @@ def save_html_statements_tables(html_data, save_path, type="10-Q"):
     table_indx = 0
     soup = BeautifulSoup(html_data, "lxml")
 
+    """idea is to split the Entire HTML in to pages using 
+    Comments and page-header tags, since parsing through 
+    entire html makes it complex"""
     # Find all <!-- Field: Page; Sequence> tags
     comments = soup.find_all(
         string=lambda text: isinstance(text, Comment) and "Field: Page;" in text
@@ -378,12 +404,14 @@ def save_html_statements_tables(html_data, save_path, type="10-Q"):
     # split html page by comments
     if comments:
         logger.info("2.1 Comment tags found...")
+
         if type == "10-K":
             logger.info("2.1.0. 10-K FILE, Using all Comments splits...")
             comments = comments[:]
         else:
             logger.info("2.1.1. 10-Q FILE, Using Only First 15 Comments splits...")
             comments = comments[:15]
+        
         # Get the content between each pair of comments
         for i in range(
             len(comments) - 1
@@ -391,13 +419,17 @@ def save_html_statements_tables(html_data, save_path, type="10-Q"):
             start_comment = comments[i]
             end_comment = comments[i + 1]
 
+            # get the contents in a page
             content_between_comments = extract_content_between_comments(
                 start_comment, end_comment
             )
+
+            # get all tables in an html
             html_tables = BeautifulSoup(content_between_comments, "lxml").find_all(
                 "table"
             )
 
+            # if tables found, get their headings
             if html_tables:
                 text_outside_tables = get_text_outside_table(content_between_comments)
                 table_name = parse_text(text_outside_tables)
@@ -406,24 +438,26 @@ def save_html_statements_tables(html_data, save_path, type="10-Q"):
                 # should have atleast some text and less than 500 characters
                 if minimal_text > 10 and minimal_text < 500:
                     logger.info(f"Found {table_name} ......")
+
+                    # if table name is shareholders, then look for 2 tables & iterate,save. 
                     if (
                         table_name
                         == "CONSOLIDATED STATEMENTS OF CHANGES IN SHAREHOLDERS’ EQUITY"
                     ):
                         for html_table in html_tables:
+                            # save that html table page as html file
                             html_filename = (
                                 f"page_comment_{table_name}_{table_indx}.html"
                             )
                             html_file_path = os.path.join(save_path, html_filename)
+                            save_html_file(html_file_path, html_table)
+                            logger.info(
+                                f"page_comment_{table_name}_{table_indx}.html is saved"
+                            )
+                            table_indx += 1
 
-                            with open(html_file_path, "w", encoding="utf-8") as f:
-                                f.write(str(html_table))
-
-                                logger.info(
-                                    f"page_comment_{table_name}_{table_indx}.html is saved"
-                                )
-                                table_indx += 1
                             try:
+                                # save the same html table to Excel sheet                            
                                 excel_file_path = html_file_path.replace(
                                     ".html", ".xlsx"
                                 )
@@ -431,6 +465,7 @@ def save_html_statements_tables(html_data, save_path, type="10-Q"):
                                 final_df.to_excel(excel_file_path, index=False)
                                 logger.info(f"{excel_file_path} is saved")
 
+                                # save the same html table to text file as well
                                 rows_only = get_rows_in_table(html_table)
                                 rows_and_tags = clean_rows_and_tags(rows_only)
                                 save_rows_and_tags(
@@ -442,22 +477,25 @@ def save_html_statements_tables(html_data, save_path, type="10-Q"):
                                 logger.info("Couldn't Save TEXT and XLSX file... Please check")
                                 pass
 
+                    # if table name is other than shareholders
                     elif table_name:
                         html_filename = f"page_comment_{table_name}_{table_indx}.html"
                         html_file_path = os.path.join(save_path, html_filename)
+                        # get only first table, as in most cases we will only have one table
+                        save_html_file(html_file_path, html_tables[0])
+                        logger.info(
+                            f"page_comment_{table_name}_{table_indx}.html is saved"
+                        )
+                        table_indx += 1
 
-                        with open(html_file_path, "w", encoding="utf-8") as f:
-                            f.write(str(html_tables[0]))
-                            logger.info(
-                                f"page_comment_{table_name}_{table_indx}.html is saved"
-                            )
-                            table_indx += 1
                         try:
+                            # save the same html table to Excel sheet
                             excel_file_path = html_file_path.replace(".html", ".xlsx")
                             final_df = get_excel_statements_tables(html_tables[0])
                             final_df.to_excel(excel_file_path, index=False)
                             logger.info(f"{excel_file_path} file saved")
 
+                            # save the same html table to text file as well
                             rows_only = get_rows_in_table(html_tables[0])
                             rows_and_tags = clean_rows_and_tags(rows_only)
                             save_rows_and_tags(
@@ -468,12 +506,14 @@ def save_html_statements_tables(html_data, save_path, type="10-Q"):
                             logger.info("Couldn't Save TEXT and XLSX file... Please check")
                             pass
 
+    # looking for page-break if not comments found     
     else:
         # find all <hr style="page-break-after:always;"/>
         # page_breaks_divss = soup.find_all('div')
         page_break_tags = soup.find_all(re.compile("^hr"))
         if page_break_tags:
             logger.info("2.1 Header tags found...")
+           
             # get the content between each paif of page_break_tags
             if type == "10-K":
                 logger.info("2.1.2. 10-K FILE, Using all page breaks...")
@@ -481,6 +521,8 @@ def save_html_statements_tables(html_data, save_path, type="10-Q"):
             else:
                 logger.info("2.1.3. 10-Q FILE, Using only First 15 Pages.....")
                 page_break_tags = page_break_tags[:15]
+            
+            # iterate through every page, look for tables
             for i in range(len(page_break_tags) - 1):
                 start_page_break = page_break_tags[i]
                 end_page_break = page_break_tags[i + 1]
@@ -492,6 +534,7 @@ def save_html_statements_tables(html_data, save_path, type="10-Q"):
                     "table"
                 )
 
+                # if tables found, get their headings
                 if html_tables:
                     text_outside_tables = get_text_outside_table(
                         content_between_page_breaks
@@ -499,6 +542,7 @@ def save_html_statements_tables(html_data, save_path, type="10-Q"):
                     table_name = parse_text(text_outside_tables)
 
                     minimal_text = len(text_outside_tables)
+                    # should have atleast some text and less than 500 characters
                     if minimal_text < 500:
                         logger.info(f"Found {table_name} ......")
                         if (
@@ -510,12 +554,12 @@ def save_html_statements_tables(html_data, save_path, type="10-Q"):
                                     f"page_headertag_{table_name}_{table_indx}.html"
                                 )
                                 html_file_path = os.path.join(save_path, html_filename)
-
-                                with open(html_file_path, "w", encoding="utf-8") as f:
-                                    f.write(str(html_table))
+                                save_html_file(html_file_path, html_table)
                                 logger.info(f"{html_filename} is saved")
                                 table_indx += 1
+
                                 try:
+                                    # save the same html table to Excel sheet
                                     excel_file_path = html_file_path.replace(
                                         ".html", ".xlsx"
                                     )
@@ -523,6 +567,7 @@ def save_html_statements_tables(html_data, save_path, type="10-Q"):
                                     final_df.to_excel(excel_file_path, index=False)
                                     logger.info(f"{excel_file_path} file saved")
 
+                                    # save the same html table to text file as well
                                     rows_only = get_rows_in_table(html_table)
                                     rows_and_tags = clean_rows_and_tags(rows_only)
                                     save_rows_and_tags(
@@ -534,17 +579,19 @@ def save_html_statements_tables(html_data, save_path, type="10-Q"):
                                     logger.info("Couldn't Save TEXT and XLSX file... Please check")
                                     pass
 
+                        # if table name is other than shareholders
                         elif table_name:
                             html_filename = (
                                 f"page_headertag_{table_name}_{table_indx}.html"
                             )
                             html_file_path = os.path.join(save_path, html_filename)
-
-                            with open(html_file_path, "w", encoding="utf-8") as f:
-                                f.write(str(html_tables[0]))
+                            # get only first table, as in most cases we will only have one table
+                            save_html_file(html_file_path, html_tables[0])
                             logger.info(f"{html_filename} is saved")
                             table_indx += 1
+
                             try:
+                                # save the same html table to Excel sheet
                                 excel_file_path = html_file_path.replace(
                                     ".html", ".xlsx"
                                 )
@@ -552,6 +599,7 @@ def save_html_statements_tables(html_data, save_path, type="10-Q"):
                                 final_df.to_excel(excel_file_path, index=False)
                                 logger.info(f"{excel_file_path} file saved")
 
+                                # save the same html table to text file as well
                                 rows_only = get_rows_in_table(html_tables[0])
                                 rows_and_tags = clean_rows_and_tags(rows_only)
                                 save_rows_and_tags(
@@ -563,16 +611,6 @@ def save_html_statements_tables(html_data, save_path, type="10-Q"):
                                 logger.info("Couldn't Save TEXT and XLSX file... Please check")
                                 pass
                         print("\n")
-
-
-## list of financial statements we are interested in
-statement_names = [
-    "BALANCE SHEET",
-    "STATEMENTS OF CASH FLOW",
-    "STATEMENTS OF EQUITY",
-    "SHAREHOLDERS’ EQUITY",
-    "OPERATIONS AND COMPREHENSIVE",
-]
 
 
 def arrange_rows_with_context(save_folder):

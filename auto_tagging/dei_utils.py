@@ -290,4 +290,8 @@ def format_processed_result(processed_result, total_given_input):
                 else:
                     output_dict[orig_row].append(item)
 
+    for row in list(output_dict):
+        if "filer" in row.lower():
+            del output_dict[row]
+    
     return output_dict

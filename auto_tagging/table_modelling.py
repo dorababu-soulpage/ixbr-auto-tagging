@@ -18,15 +18,17 @@ import pandas as pd
 import lightning.pytorch as pl
 from ast import literal_eval
 
-from .utils import read_text_file, load_yaml
+from .utils import read_text_file, load_yaml, set_seed, get_device_to_compute
 from torchmetrics.classification import F1Score
 from torchmetrics import ConfusionMatrix, Precision
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
 import logging
-
 logger = logging.getLogger(__name__)
 
+SEED= 33
+set_seed(SEED)
+device = get_device_to_compute()
 CONFIG_PATH = "config.yaml"
 yaml_obj = load_yaml(CONFIG_PATH)
 
@@ -157,7 +159,6 @@ class NameMappingModel(pl.LightningModule):
         return torch.optim.AdamW(self.parameters(), lr=1e-5)
 
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 modeleval = NameMappingModel.load_from_checkpoint(
     checkpoint_path="Models1/Table_Inline_Model/SECtag_RarelabelModel-epoch=39-val_loss=0.26.ckpt",
     labels=labels,
@@ -166,7 +167,8 @@ modeleval = NameMappingModel.load_from_checkpoint(
     map_location=device,
     strict=False,
 )
-# disable randomness, dropout, etc...
+
+# disable dropout, etc... with eval mode
 modeleval = modeleval.eval()
 modeleval = modeleval.to(device)
 tokenizer = AutoTokenizer.from_pretrained(
