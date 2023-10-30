@@ -89,10 +89,16 @@ def auto_tagging(html_file, html_type):
 
     save_html_statements_tables(html_data, save_path, html_type)
     data, columns, table_names = arrange_rows_with_context(save_path)
+    logging.info(f"{data, columns, table_names}")
+
     inputs, outputs = predict_table_tags(data)
+    for i,j in zip(inputs, outputs):
+        logging.info(f"{i},{j}")
+
     table_outputs = process_table_results(table_names, columns, inputs, outputs)
     table_outputs = clean_results(table_outputs)
     print("length of table results:", len(table_outputs))
+    logging.info(f"{table_outputs}")
 
     ### 3.Notes
     logging.info("3. Processing Notes in Filings.......")
@@ -111,6 +117,7 @@ def auto_tagging(html_file, html_type):
     Notes_outputs = process_notes_results(inputs, outputs)
     Notes_outputs = clean_results(Notes_outputs)
     print("length of notes results:", len(Notes_outputs))
+    logging.info(f"{Notes_outputs}")
 
     # #######################################################
     # #########Overwrite HTML file###########################

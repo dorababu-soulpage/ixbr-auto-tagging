@@ -189,14 +189,16 @@ def add_commas(sttt):
 
 def extract_number_from_text(text):
     # Use a regular expression to find an integer that is part of a word or phrase
-    match = re.search(r"\b\d+\b", text)
+    # match = re.search(r"\d+", text)
 
-    if match:
-        # Extract the matched integer
-        integer_value = int(match.group())
-        return integer_value
-    else:
-        return text
+    # if match:
+    #     # Extract the matched integer
+    #     print("match:", match.group())
+    #     integer_value = int(match.group())
+    #     return integer_value
+    # else:
+    #     return text
+    return text.split()[-1]
 
 
 def process_table_results(table_names, columns, inputs, outputs):

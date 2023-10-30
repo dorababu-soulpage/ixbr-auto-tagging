@@ -344,7 +344,7 @@ def get_cleaned_tags_data(text, dataframe, statement_name):
 
             df_row_text = " ".join(df_row_text.split())
             tag_text = " ".join(tag_text.split())
-
+            # print("df text:", df_row_text, "tag_text", tag_text)
             if tag_text == df_row_text:
                 match_record = dataframe.iloc[df_row]
 
@@ -657,6 +657,8 @@ def arrange_rows_with_context(save_folder):
                                     data, columns = get_cleaned_tags_data(
                                         text, dataframe, statement_name
                                     )
+                                    logger.info(
+                                        f"2.3.1.1 check data and columns {data}, {columns}")
 
                                     all_tables_data.append(data)
                                     table_names.extend(
