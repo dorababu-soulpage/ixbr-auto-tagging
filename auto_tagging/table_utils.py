@@ -274,7 +274,7 @@ def clean_rows_and_tags(complete_rows):
                 except:
                     val = tag
                     usgaap_tag = "Others"
-                val = re.sub("[^0-9]", "", val)
+                val = re.sub("[^0-9.]", "", val)
 
                 tags.append({val: usgaap_tag})
                 context += " " + val
@@ -294,7 +294,12 @@ def convert_float_to_int(value):
     """fuction that tries to convert every value
     in html table to float from string"""
     try:
-        return int(float(value))
+        if int(float(value)) == 0:
+            # if the number after converted to int becomes 0,
+            # then return original values. this way we retain floats.
+            return value
+        else:
+            return int(float(value))
     except ValueError:
         return value
 
@@ -323,6 +328,9 @@ def get_cleaned_tags_data(text, dataframe, statement_name):
         tags = {val: tag for tag_item in tags for val, tag in tag_item.items()}
 
         for df_row in range(dataframe.shape[0]):
+            # we have float values in Dataframe after reading as dataframe
+            # trying to convert every cell into integer, so we get table values
+            # from float to int converted.
             df_row_text = " ".join(
                 [
                     str(convert_float_to_int(val))

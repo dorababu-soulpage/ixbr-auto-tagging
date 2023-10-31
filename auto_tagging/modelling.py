@@ -109,18 +109,7 @@ class Xbrl_Tag():
             new_predictions = torch.argmax(new_logits, dim=2)
             new_predicted_token_class = [self.notes_model.config.id2label[t.item()] for t in new_predictions[0]]
             decoded_string = self.dei_tokenizer.convert_ids_to_tokens(new_inputs["input_ids"][0])
-
-            reconstructed_sentence = ""
-            reconstructed_labels = []
-
-            for subtoken,label in zip(decoded_string, new_predicted_token_class):
-                # Skip special tokens and subtoken markers
-                if subtoken != "<pad>":
-                    if subtoken in ["<s>", "</s>"]  or subtoken.startswith("Ġ"):
-                        reconstructed_sentence =  reconstructed_sentence+" "+subtoken.replace("Ġ", "")
-                        reconstructed_labels.append(label)
-                    else:
-                        reconstructed_sentence += subtoken
+            reconstructed_sentence, reconstructed_labels = post_process(decoded_string, new_predicted_token_class)            
             
             total_inputs.append(reconstructed_sentence)
             total_outputs.append(reconstructed_labels)
