@@ -17,17 +17,13 @@ import re
 import nltk
 import warnings
 
-from ast import literal_eval
-
 from nltk import pos_tag
 from nltk.tree import Tree
 from nltk.chunk import conlltags2tree
 from nltk.tokenize import sent_tokenize
 
 from bs4 import BeautifulSoup, Comment
-
-from .utils import clean_text
-from .utils import extract_content_until_comment, read_html_file
+from .utils import FileManager, HtmlContent, ProcessText
 
 nltk.download('punkt')
 warnings.filterwarnings("ignore")
@@ -35,6 +31,7 @@ warnings.filterwarnings("ignore")
 import logging
 logger = logging.getLogger(__name__)
 
+processtext = ProcessText()
 
 def collect_tokens(divs):
     """Pass a div tag, this function checks for the span
@@ -50,13 +47,13 @@ def collect_tokens(divs):
                         
             # the below is creating \ax0 kind of symbols in text
             sentences = sent_tokenize(text)
-            sentences = [clean_text(sentence) for sentence in sentences]
+            sentences = [processtext.clean_text(sentence) for sentence in sentences]
 
             ip_text = []
             for sentence in sentences:
                 # so clean it
                 sentence_tokens = sentence.split(" ")
-                sentence_tokens = [clean_text(token) for token in sentence_tokens if len(clean_text(token)) >= 1]
+                sentence_tokens = [processtext.clean_text(token) for token in sentence_tokens if len(processtext.clean_text(token)) >= 1]
                 ip_text.append(sentence_tokens)
 
             inputs.extend(ip_text)
@@ -75,13 +72,13 @@ def collect_tokens(divs):
 
                     # the below is creating \ax0 kind of symbols in text
                     sentences = sent_tokenize(text)
-                    sentences = [clean_text(sentence) for sentence in sentences]
+                    sentences = [processtext.clean_text(sentence) for sentence in sentences]
 
                     ip_text = []
                     for sentence in sentences:
                         # so clean it
                         sentence_tokens = sentence.split(" ")
-                        sentence_tokens = [clean_text(token) for token in sentence_tokens if len(clean_text(token)) >= 1]
+                        sentence_tokens = [processtext.clean_text(token) for token in sentence_tokens if len(processtext.clean_text(token)) >= 1]
                         ip_text.append(sentence_tokens)
         
                     inputs.extend(ip_text)
@@ -93,13 +90,13 @@ def collect_tokens(divs):
 
                 # this creates special symbols like xa08
                 sentences = sent_tokenize(text)
-                sentences = [clean_text(sentence) for sentence in sentences]
+                sentences = [processtext.clean_text(sentence) for sentence in sentences]
 
                 ip_text = []
                 for sentence in sentences:
                     # so clean it
                     sentence_tokens = sentence.split(" ")
-                    sentence_tokens = [clean_text(token) for token in sentence_tokens if len(clean_text(token)) >= 1]
+                    sentence_tokens = [processtext.clean_text(token) for token in sentence_tokens if len(processtext.clean_text(token)) >= 1]
                     ip_text.append(sentence_tokens)
                 inputs.extend(ip_text)
         
@@ -110,13 +107,13 @@ def collect_tokens(divs):
 
                 # this creates special symbols like xa08
                 sentences = sent_tokenize(text)
-                sentences = [clean_text(sentence) for sentence in sentences]
+                sentences = [processtext.clean_text(sentence) for sentence in sentences]
 
                 ip_text = []
                 for sentence in sentences:
                     # so clean it
                     sentence_tokens = sentence.split(" ")
-                    sentence_tokens = [clean_text(token) for token in sentence_tokens if len(clean_text(token)) >= 1]
+                    sentence_tokens = [processtext.clean_text(token) for token in sentence_tokens if len(processtext.clean_text(token)) >= 1]
                     ip_text.append(sentence_tokens)
                 inputs.extend(ip_text)
             
@@ -131,13 +128,13 @@ def collect_tokens(divs):
                         text = " ".join(row)
 
                         sentences = sent_tokenize(text)
-                        sentences = [clean_text(sentence) for sentence in sentences]
+                        sentences = [processtext.clean_text(sentence) for sentence in sentences]
 
                         ip_text = []
                         for sentence in sentences:
                             # so clean it
                             sentence_tokens = sentence.split(" ")
-                            sentence_tokens = [clean_text(token) for token in sentence_tokens if len(clean_text(token)) >= 1]
+                            sentence_tokens = [processtext.clean_text(token) for token in sentence_tokens if len(processtext.clean_text(token)) >= 1]
                             ip_text.append(sentence_tokens)
                         inputs.extend(ip_text)
 
@@ -145,13 +142,13 @@ def collect_tokens(divs):
         else:
             text = div.get_text()
             sentences = sent_tokenize(text)
-            sentences = [clean_text(sentence) for sentence in sentences]
+            sentences = [processtext.clean_text(sentence) for sentence in sentences]
 
             ip_text = []
             for sentence in sentences:
                 # so clean it
                 sentence_tokens = sentence.split(" ")
-                sentence_tokens = [clean_text(token) for token in sentence_tokens if len(clean_text(token)) >= 1]
+                sentence_tokens = [processtext.clean_text(token) for token in sentence_tokens if len(processtext.clean_text(token)) >= 1]
                 ip_text.append(sentence_tokens)
             inputs.extend(ip_text)
             # logger.warning("No span/div/table tags found. Text collectiong Failed")
@@ -173,7 +170,7 @@ def split_page_and_extract_text(html_path):
     checks for comment/header(hr) tag, splits
     the long html into parts. takes only first page
     & gets the text inside them."""
-    html_data = read_html_file(html_path)
+    html_data = FileManager().read_html_file(html_path)
     soup = BeautifulSoup(html_data, 'lxml')
 
     # Find all <!-- Field: Page; Sequence> tags
@@ -184,7 +181,7 @@ def split_page_and_extract_text(html_path):
         logger.info("Comments found as page break")
         for i in range(len(comments[:1])): # considering only cover page
             start_comment = comments[i]
-            content_between_comments = extract_content_until_comment(start_comment)
+            content_between_comments = HtmlContent().extract_until_comments(start_comment)
             content_between_comments = content_between_comments.encode("utf-8")
             page_html_data =  BeautifulSoup(content_between_comments, "lxml", from_encoding="utf-8")
 
@@ -215,7 +212,7 @@ def split_page_and_extract_text(html_path):
                 start_page_break = page_break_tags[i]
                 end_page_break = page_break_tags[i + 1]
 
-                content_between_page_breaks = extract_content_until_comment(start_page_break)
+                content_between_page_breaks = HtmlContent().extract_until_comments(start_page_break)
                 page_html_data =  BeautifulSoup(content_between_page_breaks)
 
                 divs = page_html_data.find_all("div")

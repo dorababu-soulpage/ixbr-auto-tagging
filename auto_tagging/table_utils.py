@@ -24,12 +24,9 @@ import warnings
 
 import pandas as pd
 import numpy as np
-from ast import literal_eval
 
 from bs4 import BeautifulSoup, Comment
-from nltk.tokenize import sent_tokenize
-from IPython.display import display
-from .utils import extract_content_between_comments, save_html_file
+from .utils import HtmlContent, FileManager 
 
 nltk.download("punkt")
 warnings.filterwarnings("ignore")
@@ -44,14 +41,6 @@ statement_names = ["BALANCE SHEET",
                    "STATEMENTS OF EQUITY",
                    "SHAREHOLDERS’ EQUITY",
                    "OPERATIONS AND COMPREHENSIVE"]
-
-
-def read_text_file(text_file_path):
-    """reads text file & converts each row to list"""
-    with open(text_file_path, "r") as fp:
-        text = fp.readlines()
-    text = [literal_eval(text_row) for text_row in text]
-    return text
 
 
 def clean_results(results):
@@ -420,7 +409,7 @@ def save_html_statements_tables(html_data, save_path, type="10-Q"):
             end_comment = comments[i + 1]
 
             # get the contents in a page
-            content_between_comments = extract_content_between_comments(
+            content_between_comments = HtmlContent().extract_between_comments(
                 start_comment, end_comment
             )
 
@@ -450,7 +439,7 @@ def save_html_statements_tables(html_data, save_path, type="10-Q"):
                                 f"page_comment_{table_name}_{table_indx}.html"
                             )
                             html_file_path = os.path.join(save_path, html_filename)
-                            save_html_file(html_file_path, html_table)
+                            FileManager().save_html_file(html_file_path, html_table)
                             logger.info(
                                 f"page_comment_{table_name}_{table_indx}.html is saved"
                             )
@@ -482,7 +471,7 @@ def save_html_statements_tables(html_data, save_path, type="10-Q"):
                         html_filename = f"page_comment_{table_name}_{table_indx}.html"
                         html_file_path = os.path.join(save_path, html_filename)
                         # get only first table, as in most cases we will only have one table
-                        save_html_file(html_file_path, html_tables[0])
+                        FileManager().save_html_file(html_file_path, html_tables[0])
                         logger.info(
                             f"page_comment_{table_name}_{table_indx}.html is saved"
                         )
@@ -527,7 +516,7 @@ def save_html_statements_tables(html_data, save_path, type="10-Q"):
                 start_page_break = page_break_tags[i]
                 end_page_break = page_break_tags[i + 1]
 
-                content_between_page_breaks = extract_content_between_comments(
+                content_between_page_breaks = HtmlContent().extract_between_comments(
                     start_page_break, end_page_break
                 )
                 html_tables = BeautifulSoup(content_between_page_breaks).find_all(
@@ -554,7 +543,7 @@ def save_html_statements_tables(html_data, save_path, type="10-Q"):
                                     f"page_headertag_{table_name}_{table_indx}.html"
                                 )
                                 html_file_path = os.path.join(save_path, html_filename)
-                                save_html_file(html_file_path, html_table)
+                                FileManager().save_html_file(html_file_path, html_table)
                                 logger.info(f"{html_filename} is saved")
                                 table_indx += 1
 
@@ -586,7 +575,7 @@ def save_html_statements_tables(html_data, save_path, type="10-Q"):
                             )
                             html_file_path = os.path.join(save_path, html_filename)
                             # get only first table, as in most cases we will only have one table
-                            save_html_file(html_file_path, html_tables[0])
+                            FileManager().save_html_file(html_file_path, html_tables[0])
                             logger.info(f"{html_filename} is saved")
                             table_indx += 1
 
@@ -650,7 +639,7 @@ def arrange_rows_with_context(save_folder):
                                         np.nan, "", regex=True
                                     )
 
-                                    text = read_text_file(text_file_path)
+                                    text = FileManager().read_text_file_lines(text_file_path)
                                     logger.info(
                                         f"2.3.1 printing text, dataframe and table names {text},{dataframe},{statement_name}"
                                     )

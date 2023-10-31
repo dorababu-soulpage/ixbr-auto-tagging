@@ -14,12 +14,11 @@ Author: purnasai@soulpage
 Date: 10-10-2023
 """
 
-import os
 import nltk
 
-from bs4 import BeautifulSoup, Comment
+from bs4 import BeautifulSoup
 from nltk.tokenize import sent_tokenize
-from .utils import clean_text
+from .utils import ProcessText 
 
 nltk.download('punkt')
 
@@ -29,6 +28,7 @@ warnings.filterwarnings("ignore")
 import logging
 logger = logging.getLogger(__name__)
 
+processtext = ProcessText()
 
 def get_text_outside_table(content_between_comments):
     """THis function takes the part of a page out of many pages,
@@ -84,7 +84,7 @@ def get_NER_Data(html_data):
             ip_text = process_text(text)
             if ip_text:
                 ip_text = " ".join(ip_text)
-                ip_text = clean_text(ip_text)
+                ip_text = processtext.clean_text(ip_text)
                 total_ip_texts.append(ip_text.split(" "))
 
     else: # else if span tags found
@@ -94,30 +94,10 @@ def get_NER_Data(html_data):
             ip_text = process_text(text)
             if ip_text:
                 ip_text = " ".join(ip_text)
-                ip_text = clean_text(ip_text)
+                ip_text = processtext.clean_text(ip_text)
                 total_ip_texts.append(ip_text.split(" "))
 
     return total_ip_texts
-
-
-# def save_rows_and_tags(save_path, folder_name, input_data, output_data):
-#     # create folder if not exists
-
-#     save_folder = os.path.join(save_path, folder_name)
-#     if not os.path.exists(save_folder):
-#         os.makedirs(save_folder)
-
-#     input_filename = os.path.join(save_folder, "inputs.txt")
-#     output_filename = os.path.join(save_folder, "outputs.txt")
-
-#     with open(input_filename, 'w') as f:
-#         for row in input_data:
-#             f.write("%s\n" % row)
-
-#     with open(output_filename, 'w') as f:
-#         for row1 in output_data:
-#             f.write("%s\n" % row1)
-
 
 def clean_notes_outputs(inputs, outputs):
     """Function to filter out sentences with 

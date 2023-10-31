@@ -18,7 +18,7 @@ import pandas as pd
 import lightning.pytorch as pl
 from ast import literal_eval
 
-from .utils import read_text_file, load_yaml, set_seed, get_device_to_compute
+from .utils import System, FileManager
 from torchmetrics.classification import F1Score
 from torchmetrics import ConfusionMatrix, Precision
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
@@ -27,13 +27,14 @@ import logging
 logger = logging.getLogger(__name__)
 
 SEED= 33
-set_seed(SEED)
-device = get_device_to_compute()
+System().set_seed(SEED)
+device = System().get_device_to_compute()
+
 CONFIG_PATH = "config.yaml"
-yaml_obj = load_yaml(CONFIG_PATH)
+yaml_obj = FileManager().load_yaml(CONFIG_PATH)
 
 ## list of table tags/labels we used at train time in the proper order
-data = read_text_file(yaml_obj["LABLES"]["Filepath"])
+data = FileManager().read_text_file(yaml_obj["LABLES"]["Filepath"])
 labels = literal_eval(data)
 
 print("Predefined Table labels:", len(labels))

@@ -18,16 +18,17 @@ import os
 import torch
 import warnings
 
-from .utils import post_process, load_yaml, set_seed, get_device_to_compute
+from .utils import post_process, System, FileManager
 from transformers import AutoTokenizer, AutoModelForTokenClassification
 
 warnings.filterwarnings("ignore")
 
 SEED= 33
-set_seed(SEED)
-device = get_device_to_compute()
+device = System().get_device_to_compute()
+System().set_seed(SEED)
+
 CONFIG_PATH = "config.yaml"
-yaml_obj = load_yaml(CONFIG_PATH)
+yaml_obj = FileManager().load_yaml(CONFIG_PATH)
 
 class Xbrl_Tag():
     """ML Model class with tokenizers and Models loaded.

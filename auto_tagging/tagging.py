@@ -1,28 +1,23 @@
 import os
 import copy
-import nltk
 import shutil
 import logging
 import datetime
 
+from bs4 import BeautifulSoup
+from .overwrite import OverwriteHtml
 
-import pandas as pd
-import numpy as np
-from bs4 import BeautifulSoup, Comment
-from nltk.tokenize import sent_tokenize
-
+import nltk
 nltk.download("punkt")
 
 # utility imports
 from .utils import (
-    read_html_file,
-    split_input_html,
-    modify_coverpage,
+    FileManager,
+    HtmlContent,
     process_table_results,
-    modify_statement_tabels,
     process_notes_results,
-    modify_notespages,
 )
+
 from .dei_utils import (
     split_page_and_extract_text,
     remove_unpredicted_rows,
@@ -53,7 +48,7 @@ logging.basicConfig(
     level=logging.INFO,
 )
 
-
+overwritehtml = OverwriteHtml()
 def auto_tagging(html_file, html_type):
     xbrl_tag = Xbrl_Tag()
     html_path = html_file
@@ -84,7 +79,7 @@ def auto_tagging(html_file, html_type):
 
     # folder to save
     save_folder = "Table_raw_results"
-    html_data = read_html_file(html_path)
+    html_data = FileManager().read_html_file(html_path)
     save_path = os.path.join(save_folder, folder)
 
     save_html_statements_tables(html_data, save_path, html_type)
@@ -105,7 +100,7 @@ def auto_tagging(html_file, html_type):
     logging.info("3.0.Processing Entire HTML instead of NOTES Sections.")
     # TODO: Should only run Notes section instead of Entire HTML.
 
-    html_data = read_html_file(html_path)
+    html_data = FileManager().read_html_file(html_path)
     input_data = get_NER_Data(html_data)
 
     logging.info("3.2. starting predicting Notes tags....")
@@ -123,12 +118,12 @@ def auto_tagging(html_file, html_type):
     # #########Overwrite HTML file###########################
     # #######################################################
     logging.info("4. Overwriting HTML File with ML Model Results..")
-    coverapge, other_pages = split_input_html(dest_path)
+    coverapge, other_pages = HtmlContent().split_page(dest_path)
     html_string, other_pages1 = copy.deepcopy(coverapge), copy.deepcopy(other_pages)
 
-    html_string = modify_coverpage(html_string, coverapge_results)
-    other_pages2 = modify_statement_tabels(other_pages1, table_outputs)
-    other_pages3 = modify_notespages(other_pages2, Notes_outputs, table_output_values)
+    html_string = overwritehtml.modify_coverpage(html_string, coverapge_results)
+    other_pages2 = overwritehtml.modify_statement_tabels(other_pages1, table_outputs)
+    other_pages3 = overwritehtml.modify_notespages(other_pages2, Notes_outputs, table_output_values)
 
     print(len(html_string), len(other_pages3))
     final_result = html_string + other_pages3
