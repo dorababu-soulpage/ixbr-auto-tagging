@@ -1,14 +1,12 @@
 import os
 import copy
+import nltk
 import shutil
 import logging
 import datetime
 
 from bs4 import BeautifulSoup
 from .overwrite import OverwriteHtml
-
-import nltk
-nltk.download("punkt")
 
 # utility imports
 from .utils import (
@@ -34,6 +32,8 @@ from .notes_utils import get_NER_Data, clean_notes_outputs
 # ml model imports
 from .modelling import Xbrl_Tag
 from .table_modelling import predict_table_tags
+
+nltk.download("punkt")
 
 # get current date
 current_date = datetime.date.today()

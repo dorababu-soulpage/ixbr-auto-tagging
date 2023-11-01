@@ -21,6 +21,7 @@ import re
 import nltk
 import shutil
 import warnings
+import logging
 
 import pandas as pd
 import numpy as np
@@ -30,8 +31,6 @@ from .utils import HtmlContent, FileManager
 
 nltk.download("punkt")
 warnings.filterwarnings("ignore")
-
-import logging
 logger = logging.getLogger(__name__)
 
 
@@ -112,7 +111,6 @@ def get_table(tables):
     mask = (df.iloc[1:, :].isna()).all(axis=0)
     financial_statements = df.drop(df.columns[mask], axis=1).fillna("")
     financial_statements.reset_index(drop=True, inplace=True)
-    financial_statments = financial_statements.T.reset_index(drop=True).T
     return financial_statements
 
 
@@ -200,7 +198,7 @@ def clean_duplicate_columns(final_df):
                 final_df.drop(cols, axis=1, inplace=True)
                 # add max value column
                 final_df[col] = max_values
-    except:
+    except Exception:
         new_header = final_df.iloc[:2].agg(" ".join)
         final_df.columns = new_header
         final_df = final_df.iloc[2:].reset_index(drop=True)
@@ -223,7 +221,7 @@ def get_excel_statements_tables(html_table):
         final_df = create_header(final_df)
         final_df = final_df.rename(columns={final_df.columns[0]: "index"})
         final_df = clean_duplicate_columns(final_df)
-    except:
+    except Exception:
         final_df = final_df
     return final_df
 
@@ -253,7 +251,7 @@ def get_rows_in_table(html_table):
             if row_text:
                 total_rows.append(row_text)
 
-    row_lengths = [len(row) for row in total_rows]
+    # row_lengths = [len(row) for row in total_rows]
     # # get mode of row lengths, This is avoiding "$" rows
     # mode = max(set(row_lengths), key=row_lengths.count)
     # complete_rows = [row for row in total_rows if len(row) == mode]
@@ -271,7 +269,7 @@ def clean_rows_and_tags(complete_rows):
             for tag in row[1:]:
                 try:
                     val, usgaap_tag = tag.split()
-                except:
+                except Exception:
                     val = tag
                     usgaap_tag = "Others"
                 val = re.sub("[^0-9.]", "", val)
@@ -351,7 +349,7 @@ def get_cleaned_tags_data(text, dataframe, statement_name):
                 for column_name, value in match_record.items():
                     value = str(convert_float_to_int(value))
 
-                    if tags.get(value) == None:
+                    if tags.get(value) is None:
                         context = value
                     else:  # tags.get(value) != None:
                         us_gaap_tag = tags.get(value)
@@ -470,7 +468,7 @@ def save_html_statements_tables(html_data, save_path, type="10-Q"):
                                     html_file_path.replace(".html", ".txt"),
                                 )
                                 logger.info("txt file saved too....")
-                            except:
+                            except Exception:
                                 logger.info("Couldn't Save TEXT and XLSX file... Please check")
                                 pass
 
@@ -499,7 +497,7 @@ def save_html_statements_tables(html_data, save_path, type="10-Q"):
                                 rows_and_tags, html_file_path.replace(".html", ".txt")
                             )
                             logger.info("txt file saved too")
-                        except:
+                        except Exception:
                             logger.info("Couldn't Save TEXT and XLSX file... Please check")
                             pass
 
@@ -572,7 +570,7 @@ def save_html_statements_tables(html_data, save_path, type="10-Q"):
                                         html_file_path.replace(".html", ".txt"),
                                     )
                                     logger.info("txt file saved too")
-                                except:
+                                except Exception:
                                     logger.info("Couldn't Save TEXT and XLSX file... Please check")
                                     pass
 
@@ -604,7 +602,7 @@ def save_html_statements_tables(html_data, save_path, type="10-Q"):
                                     html_file_path.replace(".html", ".txt"),
                                 )
                                 logger.info("txt file saved too...")
-                            except:
+                            except Exception:
                                 logger.info("Couldn't Save TEXT and XLSX file... Please check")
                                 pass
                         print("\n")

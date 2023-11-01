@@ -18,20 +18,29 @@ import re
 import yaml
 import torch
 import random
+import warnings
 import numpy as np
 
 from ast import literal_eval
-from cleantext import clean
 from bs4 import BeautifulSoup, Comment
 
-import warnings
+
 warnings.filterwarnings("ignore")
+
+with warnings.catch_warnings():
+    # this is to only avoid deprecation warning in clean_text package
+    # but not to all other packages.
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
+    from cleantext import clean
+
 
 class System:
     def __init__(self):
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    def get_device_to_compute(self,):
+    def get_device_to_compute(
+        self,
+    ):
         return self.device
 
     def set_seed(self, seed):
@@ -42,7 +51,7 @@ class System:
         torch.backends.cudnn.benchmark = False
 
 
-class FileManager():
+class FileManager:
     def __init__(self) -> None:
         pass
 
@@ -52,13 +61,12 @@ class FileManager():
             yaml_obj = yaml.safe_load(file)
         return yaml_obj
 
-
     def read_text_file(self, file_path):
         """furnction to read plain text file and return data"""
         with open(file_path, "r") as fp:
             data = fp.read()
         return data
-    
+
     def read_text_file_lines(self, text_file_path):
         """reads text file & converts each row to list"""
         with open(text_file_path, "r") as fp:
@@ -66,17 +74,15 @@ class FileManager():
         text = [literal_eval(text_row) for text_row in text]
         return text
 
-
     def read_html_file(self, html_path):
         """fucntion to read html file"""
         with open(html_path, "r", encoding="unicode-escape") as file:
             html_data = file.read()
         return html_data
 
-
     def save_html_file(self, html_file_path, html_table_script):
         """save html script of STRING to html page"""
-        with open(html_file_path, 'w', encoding='utf-8') as f:
+        with open(html_file_path, "w", encoding="utf-8") as f:
             f.write(str(html_table_script))
 
 
@@ -95,7 +101,6 @@ class HtmlContent:
             curr = curr.find_previous_sibling()
         return content
 
-
     def extract_between_comments(self, start_comment, end_comment):
         """fucntion to get html code from one page start to same page end"""
         content = ""
@@ -113,7 +118,7 @@ class HtmlContent:
         - collect_tokens
         in dei_utils.py file"""
         html_data = FileManager().read_html_file(html_path)
-        soup = BeautifulSoup(html_data,"lxml")
+        soup = BeautifulSoup(html_data, "lxml")
 
         # Find all <!-- Field: Page; Sequence> tags
         comments = soup.find_all(
@@ -122,7 +127,7 @@ class HtmlContent:
 
         # split html page by comments
         if comments:
-            print("Comments found")
+            # print("Comments found")
             for i in range(len(comments[:1])):  # all pages, not slicing
                 start_comment = comments[i]
 
@@ -132,7 +137,7 @@ class HtmlContent:
 
         elif soup.find_all(re.compile("^hr")):
             page_break_tags = soup.find_all(re.compile("^hr"))
-            print("PAGE BREAK found", len(page_break_tags))
+            # print("PAGE BREAK found", len(page_break_tags))
             if len(page_break_tags) > 1:
                 for i in range(len(page_break_tags[:1])):  # all pages, not slicing
                     start_page_break = page_break_tags[i]
@@ -207,7 +212,6 @@ def process_table_results(table_names, columns, inputs, outputs):
     """Post processing for tabel results to particular pattern."""
     table_outputs = []
     for table_name, column, row, tag in zip(table_names, columns, inputs, outputs):
-
         row_line, output_tag = row.replace(table_name, "").replace(column, ""), tag
         numbers, output_tag = ProcessText().extract_number_from_text(row_line), tag
         numbers, output_tag = ProcessText().add_commas(str(numbers)), output_tag

@@ -15,17 +15,15 @@ Date: 10-10-2023
 """
 
 import nltk
+import logging
+import warnings
 
 from bs4 import BeautifulSoup
 from nltk.tokenize import sent_tokenize
 from .utils import ProcessText 
 
 nltk.download('punkt')
-
-import warnings
 warnings.filterwarnings("ignore")
-
-import logging
 logger = logging.getLogger(__name__)
 
 processtext = ProcessText()

@@ -16,6 +16,7 @@ Date: 10-10-2023
 import re
 import nltk
 import warnings
+import logging
 
 from nltk import pos_tag
 from nltk.tree import Tree
@@ -27,8 +28,6 @@ from .utils import FileManager, HtmlContent, ProcessText
 
 nltk.download('punkt')
 warnings.filterwarnings("ignore")
-
-import logging
 logger = logging.getLogger(__name__)
 
 processtext = ProcessText()
@@ -210,8 +209,6 @@ def split_page_and_extract_text(html_path):
         if len(page_break_tags)>1:
             for i in range(len(page_break_tags[:1])): # all pages, not slicing
                 start_page_break = page_break_tags[i]
-                end_page_break = page_break_tags[i + 1]
-
                 content_between_page_breaks = HtmlContent().extract_until_comments(start_page_break)
                 page_html_data =  BeautifulSoup(content_between_page_breaks)
 
