@@ -1,3 +1,19 @@
+"""
+Title: 
+    HTML Overwriting modules
+
+Description:
+    This file has all the functionalities/utilities required for HTML Overwriting.
+
+Takeaways:
+    - we are using "search&replace" strategy of string replacing.
+    - it is actually supposted to happen at HTML side from backend or frontend.
+    
+
+Author: purnasai@soulpage
+Date: 31-10-2023
+"""
+
 import uuid
 import string
 import random

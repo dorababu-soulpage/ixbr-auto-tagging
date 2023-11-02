@@ -56,6 +56,7 @@ def auto_tagging(html_file, html_type):
     dest_path = os.path.join(parent_dir, "copied_html.html")
     shutil.copy(html_path, dest_path)
     logging.info(f"0. FIle type received is {html_type}")
+    logging.info(f"0.1. File:{html_file}")
 
     ### 1.COVERPAGE
     logging.info("1.Processing Cover page...............")
@@ -123,6 +124,7 @@ def auto_tagging(html_file, html_type):
 
     html_string = overwritehtml.modify_coverpage(html_string, coverapge_results)
     other_pages2 = overwritehtml.modify_statement_tabels(other_pages1, table_outputs)
+    # other_pages2 = other_pages2.replace("&nbsp;"," ")
     other_pages3 = overwritehtml.modify_notespages(other_pages2, Notes_outputs, table_output_values)
 
     print(len(html_string), len(other_pages3))

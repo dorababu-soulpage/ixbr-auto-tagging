@@ -303,9 +303,13 @@ def convert_float_to_int(value):
 
 
 def get_cleaned_tags_data(text, dataframe, statement_name):
+    """This is the core logic to add context to values in this project."""
+
     """want to attach Table/Statement Name to every row in Table
     for more context, so our ML Model can easily predict.
     
+    Ex: 'operations and comprehensive Rental  income Three  Months Ended April  30  2023  5563396==Others'
+
     text: every row in the text variable represents every row in statement table
     with attached value in table along with ML/us-gaap taxonomy.
     
@@ -318,30 +322,42 @@ def get_cleaned_tags_data(text, dataframe, statement_name):
     total_table_columns = []
 
     for text_row in text:
+        # loop to iterate over line in text file
         tag_text = text_row[0]
         tag_text = " ".join([token.strip() for token in tag_text.split()])
         tag_text = re.sub(r"[,():\-]", "", tag_text)
+        # tag_text  = re.sub(r"Â","", tag_text)
+        # tag_text = tag_text.replace("","")
 
         tags = text_row[1]
         tags = {val: tag for tag_item in tags for val, tag in tag_item.items()}
 
-        for df_row in range(dataframe.shape[0]):
+        for df_row_index in range(dataframe.shape[0]):
+            # loop to iterate over row in DataFrame
+
             # we have float values in Dataframe after reading as dataframe
             # trying to convert every cell into integer, so we get table values
             # from float to int converted.
             df_row_text = " ".join(
                 [
                     str(convert_float_to_int(val))
-                    for val in dataframe.iloc[df_row].values
+                    for val in dataframe.iloc[df_row_index].values
                 ]
             )
             df_row_text = re.sub(r"[,():\-]", "", df_row_text)
+            # df_row_text = re.sub(r"Â", "", df_row_text)
+            # df_row_text = df_row_text.replace("","")
 
             df_row_text = " ".join(df_row_text.split())
             tag_text = " ".join(tag_text.split())
-            # print("df text:", df_row_text, "tag_text", tag_text)
+            # df_row_text = " ".join([token.strip() for token in df_row_text.split(" ") if token.strip()])
+            # tag_text = " ".join([token.strip() for token in tag_text.split(" ") if token.strip()])            
+            
+            logger.info(f"df text: {df_row_text} tag_text{tag_text}")
             if tag_text == df_row_text:
-                match_record = dataframe.iloc[df_row]
+                # if record match 
+                match_record = dataframe.iloc[df_row_index]
+                # retrieve the entire row
 
                 columns = []
                 contexts = []
@@ -350,6 +366,7 @@ def get_cleaned_tags_data(text, dataframe, statement_name):
                     value = str(convert_float_to_int(value))
 
                     if tags.get(value) is None:
+                        # if the value has no tag, then it must be context
                         context = value
                     else:  # tags.get(value) != None:
                         us_gaap_tag = tags.get(value)
