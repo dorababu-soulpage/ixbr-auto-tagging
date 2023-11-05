@@ -59,16 +59,16 @@ def auto_tagging(html_file, html_type):
     logging.info(f"0.1. File:{html_file}")
 
     ### 1.COVERPAGE
-    logging.info("1.Processing Cover page...............")
+    logging.info("1. Processing Cover page...............")
     total_rows = split_page_and_extract_text(html_path)
 
-    logging.info("1.1 Started predicting DEI tags.....")
+    logging.info("1.1. Started predicting DEI tags.....")
     original_inputs, inputs, outputs = xbrl_tag.predict_dei_tags(total_rows)
     inputs, outputs = remove_unpredicted_rows(inputs, outputs)
     logging.info("1.2. Started Post processing DEI Tags.....")
     processed_result = post_process_tags(inputs, outputs)
     coverapge_results = format_processed_result(processed_result, original_inputs)
-    print("Coverpage results lenght:", len(coverapge_results))
+    logging.info(f"Coverpage results Count:, {len(coverapge_results)}")
     logging.info("1.3. Completed DEI tags sucessfully")
     logging.info(f"{coverapge_results}")
 
@@ -83,6 +83,7 @@ def auto_tagging(html_file, html_type):
     html_data = FileManager().read_html_file(html_path)
     save_path = os.path.join(save_folder, folder)
 
+    # save statement tables to folder
     save_html_statements_tables(html_data, save_path, html_type)
     data, columns, table_names = arrange_rows_with_context(save_path)
     logging.info(f"{data, columns, table_names}")
@@ -93,7 +94,7 @@ def auto_tagging(html_file, html_type):
 
     table_outputs = process_table_results(table_names, columns, inputs, outputs)
     table_outputs = clean_results(table_outputs)
-    print("length of table results:", len(table_outputs))
+    logging.info(f"length of table results:, {len(table_outputs)}")
     logging.info(f"{table_outputs}")
 
     ### 3.Notes
@@ -101,8 +102,8 @@ def auto_tagging(html_file, html_type):
     logging.info("3.0.Processing Entire HTML instead of NOTES Sections.")
     # TODO: Should only run Notes section instead of Entire HTML.
 
-    html_data = FileManager().read_html_file(html_path)
-    input_data = get_NER_Data(html_data)
+    html_data: str = FileManager().read_html_file(html_path)
+    input_data: list = get_NER_Data(html_data)
 
     logging.info("3.2. starting predicting Notes tags....")
     inputs, outputs = xbrl_tag.predict_notes_tags(input_data)
@@ -112,7 +113,7 @@ def auto_tagging(html_file, html_type):
     table_output_values = [key for row in table_outputs for key, val in row.items()]
     Notes_outputs = process_notes_results(inputs, outputs)
     Notes_outputs = clean_results(Notes_outputs)
-    print("length of notes results:", len(Notes_outputs))
+    logging.info(f"length of notes results:, {len(Notes_outputs)}")
     logging.info(f"{Notes_outputs}")
 
     # #######################################################
@@ -124,7 +125,6 @@ def auto_tagging(html_file, html_type):
 
     html_string = overwritehtml.modify_coverpage(html_string, coverapge_results)
     other_pages2 = overwritehtml.modify_statement_tabels(other_pages1, table_outputs)
-    # other_pages2 = other_pages2.replace("&nbsp;"," ")
     other_pages3 = overwritehtml.modify_notespages(other_pages2, Notes_outputs, table_output_values)
 
     print(len(html_string), len(other_pages3))

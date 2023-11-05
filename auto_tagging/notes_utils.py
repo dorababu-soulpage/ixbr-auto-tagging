@@ -13,14 +13,15 @@ Takeaways:
 Author: purnasai@soulpage
 Date: 10-10-2023
 """
-
+import bs4
 import nltk
 import logging
 import warnings
 
+from typing import List, Tuple
 from bs4 import BeautifulSoup
 from nltk.tokenize import sent_tokenize
-from .utils import ProcessText 
+from .utils import ProcessText, get_text_outside_table
 
 nltk.download('punkt')
 warnings.filterwarnings("ignore")
@@ -28,33 +29,18 @@ logger = logging.getLogger(__name__)
 
 processtext = ProcessText()
 
-def get_text_outside_table(content_between_comments):
-    """THis function takes the part of a page out of many pages,
-    removes table from the page, returns remaining text."""
-    soup1 = BeautifulSoup(content_between_comments, "lxml")
-    # Remove all the tables from the HTML content
-    for table in soup1.find_all('table'):
-        table.extract()
 
-    # Remove all the elements with table-related tags from the HTML content
-    for tag in ['tbody', 'thead', 'tfoot', 'tr', 'th', 'td']:
-        for element in soup1.find_all(tag):
-            element.extract()
-
-    # Get the text outside the tables and table-related elements
-    text_outside_tables = soup1.get_text()
-    return text_outside_tables, soup1
-
-
-def process_text(paragraph):
+def process_text(paragraph: str) -> List:
     """This splits paragraph into multiple sentences.
     these sentences are cleaned to remove $ and others
     """
-    ip_text = []
 
-    sentences = sent_tokenize(paragraph)
+    ip_text = []
+    sentences: List[str] = sent_tokenize(paragraph)
+    
     for sentence in sentences:
         sentence_ip_text = []
+        
         for token in sentence.split(" "):
             strip_token = token.replace("$","")
             if strip_token.endswith("."):
@@ -66,18 +52,20 @@ def process_text(paragraph):
 
     return ip_text
 
-def get_NER_Data(html_data):
+def get_NER_Data(html_data: str) -> List[List[str]]:
     """Takes html as input, finds html code of text outside tabels,
     finds P/span tags, extract, cleans, splits the text."""
+    
     logger.info("3.1. Started collecting entire text, not just pages with notes heading..")
     total_ip_texts = []
+
     # this eliminates tables in Notes section
     text_content, html_content = get_text_outside_table(html_data)
 
     # if Paragraph tags found
     if html_content.find_all("p"):
         for p in html_content.find_all("p"):
-            text = p.get_text()
+            text: str = p.get_text()
 
             ip_text = process_text(text)
             if ip_text:
@@ -87,7 +75,7 @@ def get_NER_Data(html_data):
 
     else: # else if span tags found
         for span in html_content.find_all("span"):
-            text = span.get_text()
+            text: str = span.get_text()
 
             ip_text = process_text(text)
             if ip_text:

@@ -21,12 +21,13 @@ import random
 import logging
 logger = logging.getLogger(__name__)
 
+from typing import Dict, List
 
 class OverwriteHtml():
     def __init__(self) -> None:
         pass
     
-    def modify_coverpage(self, html_string, coverpage_output):
+    def modify_coverpage(self, html_string: str, coverpage_output: Dict):
         """Function to use Coverpage/DEI results, search for the value in html
         and replace them with <font> tag"""
         logger.info("4.0. Overwriting HTML with COVERPAGE tags")
@@ -70,7 +71,7 @@ class OverwriteHtml():
         return html_string
 
 
-    def modify_statement_tabels(self, second_half, Table_output):
+    def modify_statement_tabels(self, second_half: str, Table_output: Dict):
         """Function to use Table results, search for the value in html
         and replace them with <font> tag"""
         logger.info("4.1. Overwriting HTML with TABLE tags")
@@ -122,7 +123,7 @@ class OverwriteHtml():
         return second_half
 
 
-    def modify_notespages(self, second_half, Notes_output, table_output_values):
+    def modify_notespages(self, second_half: str, Notes_output: Dict, table_output_values: List):
         """Function to use Notes results, search for the value in html
         and replace them with <font> tag"""
         logger.info("4.2. Overwriting HTML with NOTES tags")

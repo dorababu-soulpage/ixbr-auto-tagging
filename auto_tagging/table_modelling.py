@@ -18,6 +18,7 @@ import pandas as pd
 import lightning.pytorch as pl
 from ast import literal_eval
 
+from typing import List, Dict, Tuple
 from .utils import System, FileManager
 from torchmetrics.classification import F1Score
 from torchmetrics import ConfusionMatrix, Precision
@@ -35,11 +36,11 @@ yaml_obj = FileManager().load_yaml(CONFIG_PATH)
 
 ## list of table tags/labels we used at train time in the proper order
 data = FileManager().read_text_file(yaml_obj["LABLES"]["Filepath"])
-labels = literal_eval(data)
+labels: List[str] = literal_eval(data)
 
 print("Predefined Table labels:", len(labels))
-label2id = {lable: idx for idx, lable in enumerate(labels)}
-id2label = {index: label for label, index in label2id.items()}
+label2id: Dict = {lable: idx for idx, lable in enumerate(labels)}
+id2label: Dict = {index: label for label, index in label2id.items()}
 
 
 class NameMappingModel(pl.LightningModule):
@@ -177,10 +178,13 @@ tokenizer = AutoTokenizer.from_pretrained(
 )
 
 
-def predict_table_tags(data):
+def predict_table_tags(data) -> Tuple[List, List]:
+    """function to predict table tags"""
+    
     logger.info("2.4. Predicting table tags......")
     texts = []
     predicted_labels = []
+    
     # predict with the model
     with torch.no_grad():
         for table_data in data:
@@ -212,4 +216,5 @@ def predict_table_tags(data):
 
                 texts.append(text)
                 predicted_labels.append(predlabels)
+
     return texts, predicted_labels

@@ -18,6 +18,7 @@ import os
 import torch
 import warnings
 
+from typing import List
 from .utils import post_process, System, FileManager
 from transformers import AutoTokenizer, AutoModelForTokenClassification
 
@@ -53,14 +54,14 @@ class Xbrl_Tag():
         self.notes_model = self.notes_model.to(self.device)
 
 
-    def predict_dei_tags(self, total_rows):
+    def predict_dei_tags(self, total_rows: List[List[str]]):
         """Function to predict DEI/Cover page entities
         and returns reconstructed input sentence with 
         output  tags where each tag is output of each input word
         """
         original_inputs, total_inputs, total_outputs = [],[],[]
         for input_row in total_rows:
-            joined_text = " ".join(input_row)
+            joined_text: str = " ".join(input_row)
 
             new_inputs = self.dei_tokenizer(joined_text,
                                             padding='max_length',
@@ -86,7 +87,7 @@ class Xbrl_Tag():
 
         return original_inputs, total_inputs, total_outputs
     
-    def predict_notes_tags(self, total_rows):
+    def predict_notes_tags(self, total_rows: List[List[str]]):
         """Function to predict tags in the Notes section in Filings.
         """
         total_inputs, total_outputs = [],[]

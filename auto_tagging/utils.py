@@ -15,6 +15,7 @@ Date: 10-10-2023
 
 
 import re
+import bs4
 import yaml
 import torch
 import random
@@ -23,7 +24,7 @@ import numpy as np
 
 from ast import literal_eval
 from bs4 import BeautifulSoup, Comment
-
+from typing import Tuple
 
 warnings.filterwarnings("ignore")
 
@@ -186,7 +187,10 @@ class ProcessText:
         return new
 
     def extract_number_from_text(self, text):
-        return text.split()[-1]
+        try:
+            return text.split()[-1]
+        except:
+            return text
 
 
 def post_process(decoded_string, predictions):
@@ -228,3 +232,23 @@ def process_notes_results(inputs, outputs):
             if oup_word != "O":
                 Notes_outputs.append({inp_word: oup_word})
     return Notes_outputs
+
+
+def get_text_outside_table(content_between_comments: str) -> Tuple[str, bs4.BeautifulSoup]:
+    """THis function takes the part of a page out of many pages,
+    removes table from the page, returns remaining text."""
+    
+    soup1: bs4.BeautifulSoup = BeautifulSoup(content_between_comments, "lxml")
+    
+    # Remove all the tables from the HTML content
+    for table in soup1.find_all('table'):
+        table.extract()
+
+    # Remove all the elements with table-related tags from the HTML content
+    for tag in ['tbody', 'thead', 'tfoot', 'tr', 'th', 'td']:
+        for element in soup1.find_all(tag):
+            element.extract()
+
+    # Get the text outside the tables and table-related elements
+    text_outside_tables: str = soup1.get_text()
+    return text_outside_tables, soup1

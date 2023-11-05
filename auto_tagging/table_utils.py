@@ -27,7 +27,7 @@ import pandas as pd
 import numpy as np
 
 from bs4 import BeautifulSoup, Comment
-from .utils import HtmlContent, FileManager 
+from .utils import HtmlContent, FileManager, get_text_outside_table
 
 nltk.download("punkt")
 warnings.filterwarnings("ignore")
@@ -49,24 +49,6 @@ def clean_results(results):
     # which is not good. so cleaning them is better.
     results = [pair for pair in results for k, v in pair.items() if len(k) > 1]
     return results
-
-
-def get_text_outside_table(content_between_comments):
-    """Function to get all the text outside the table in a page"""
-    soup1 = BeautifulSoup(content_between_comments, "lxml")
-    # Remove all the tables from the HTML content
-    for table in soup1.find_all("table"):
-        table.extract()
-
-    # Remove all the elements with table-related tags from the HTML content
-    for tag in ["tbody", "thead", "tfoot", "tr", "th", "td"]:
-        for element in soup1.find_all(tag):
-            element.extract()
-
-    # Get the text outside the tables and table-related elements
-    text_outside_tables = soup1.get_text()
-    return text_outside_tables
-
 
 def parse_text(text_outside_tables):
     """this function used to assign a label using the text outsidet the table.
@@ -302,7 +284,7 @@ def convert_float_to_int(value):
         return value
 
 
-def get_cleaned_tags_data(text, dataframe, statement_name):
+def align_context_and_columns_to_data(text, dataframe, statement_name):
     """This is the core logic to add context to values in this project."""
 
     """want to attach Table/Statement Name to every row in Table
@@ -321,71 +303,60 @@ def get_cleaned_tags_data(text, dataframe, statement_name):
     total_df_context_rows = []
     total_table_columns = []
 
+    entire_table_vals = []
     for text_row in text:
-        # loop to iterate over line in text file
-        tag_text = text_row[0]
-        tag_text = " ".join([token.strip() for token in tag_text.split()])
-        tag_text = re.sub(r"[,():\-]", "", tag_text)
-        # tag_text  = re.sub(r"Â","", tag_text)
-        # tag_text = tag_text.replace("","")
-
+        # get all table values in to a list
         tags = text_row[1]
-        tags = {val: tag for tag_item in tags for val, tag in tag_item.items()}
+        vals = [val for tag_item in tags for val, tag in tag_item.items()]
+        entire_table_vals.extend(vals)
 
-        for df_row_index in range(dataframe.shape[0]):
-            # loop to iterate over row in DataFrame
+    for df_row_index in range(dataframe.shape[0]):
+        # loop to iterate over row in DataFrame
 
-            # we have float values in Dataframe after reading as dataframe
-            # trying to convert every cell into integer, so we get table values
-            # from float to int converted.
-            df_row_text = " ".join(
-                [
-                    str(convert_float_to_int(val))
-                    for val in dataframe.iloc[df_row_index].values
-                ]
-            )
-            df_row_text = re.sub(r"[,():\-]", "", df_row_text)
-            # df_row_text = re.sub(r"Â", "", df_row_text)
-            # df_row_text = df_row_text.replace("","")
+        # we have float values in Dataframe after reading as dataframe
+        # trying to convert every cell into integer, so we get table values
+        # from float to int converted.
+        df_row_text = " ".join(
+            [
+                str(convert_float_to_int(val))
+                for val in dataframe.iloc[df_row_index].values
+            ]
+        )
+        df_row_text = re.sub(r"[,():\-]", "", df_row_text)
+        df_row_text = " ".join(df_row_text.split())
+        
+        logger.info(f"df text: {df_row_text}")
+        match_record = dataframe.iloc[df_row_index]
+        # retrieve the entire row
 
-            df_row_text = " ".join(df_row_text.split())
-            tag_text = " ".join(tag_text.split())
-            # df_row_text = " ".join([token.strip() for token in df_row_text.split(" ") if token.strip()])
-            # tag_text = " ".join([token.strip() for token in tag_text.split(" ") if token.strip()])            
-            
-            logger.info(f"df text: {df_row_text} tag_text{tag_text}")
-            if tag_text == df_row_text:
-                # if record match 
-                match_record = dataframe.iloc[df_row_index]
-                # retrieve the entire row
+        columns = []
+        contexts = []
+        context = " "
+        for column_name, value in match_record.items():
+            value = str(convert_float_to_int(value))
 
-                columns = []
-                contexts = []
-                context = " "
-                for column_name, value in match_record.items():
-                    value = str(convert_float_to_int(value))
+            if value not in entire_table_vals:
+                # if the value has no tag, then it must be context
+                context = value
+            else:  # tags.get(value) != None:
+                us_gaap_tag = "Others"
+                context1 = (
+                    context
+                    + " "
+                    + column_name
+                    + " "
+                    + value
+                    + "=="
+                    + us_gaap_tag
+                )
+                if context1:
+                    contexts.append(context1)
+                    columns.append(column_name)
 
-                    if tags.get(value) is None:
-                        # if the value has no tag, then it must be context
-                        context = value
-                    else:  # tags.get(value) != None:
-                        us_gaap_tag = tags.get(value)
-                        context1 = (
-                            context
-                            + " "
-                            + column_name
-                            + " "
-                            + value
-                            + "=="
-                            + us_gaap_tag
-                        )
-                        if context1:
-                            contexts.append(context1)
-                            columns.append(column_name)
-                if contexts and columns:
-                    total_df_context_rows.extend(contexts)
-                    total_table_columns.extend(columns)
-                break
+        if contexts and columns:
+            total_df_context_rows.extend(contexts)
+            total_table_columns.extend(columns)
+
     total_df_context_rows = [
         " ".join([statement_name, row]) for row in total_df_context_rows
     ]
@@ -443,7 +414,7 @@ def save_html_statements_tables(html_data, save_path, type="10-Q"):
 
             # if tables found, get their headings
             if html_tables:
-                text_outside_tables = get_text_outside_table(content_between_comments)
+                text_outside_tables,_  = get_text_outside_table(content_between_comments)
                 table_name = parse_text(text_outside_tables)
                 minimal_text = len(text_outside_tables)
 
@@ -666,7 +637,7 @@ def arrange_rows_with_context(save_folder):
                                     logger.info(
                                         f"2.3.1 printing text, dataframe and table names {text},{dataframe},{statement_name}"
                                     )
-                                    data, columns = get_cleaned_tags_data(
+                                    data, columns = align_context_and_columns_to_data(
                                         text, dataframe, statement_name
                                     )
                                     logger.info(
