@@ -19,14 +19,16 @@ import string
 import random
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 from typing import Dict, List
 
-class OverwriteHtml():
+
+class OverwriteHtml:
     def __init__(self) -> None:
         pass
-    
+
     def modify_coverpage(self, html_string: str, coverpage_output: Dict):
         """Function to use Coverpage/DEI results, search for the value in html
         and replace them with <font> tag"""
@@ -42,7 +44,7 @@ class OverwriteHtml():
             [
                 row[0],
                 row[1],
-                f'<font data-autotag="true" id=xdx_90{random.choice(string.ascii_letters)}_e{row[1]}_{uuid_result}>{row[0]}</font>',
+                f'<font data-autotag="true" id=apex_90{random.choice(string.ascii_letters)}_e{row[1]}_{uuid_result}>{row[0]}</font>',
             ]
             for row in ml_tags
         ]
@@ -53,7 +55,9 @@ class OverwriteHtml():
         placeholders = {}
 
         for row in ml_tags:
-            replaced_string = html_string.replace(">" + row[0] + "<", ">" + row[2] + "<")
+            replaced_string = html_string.replace(
+                ">" + row[0] + "<", ">" + row[2] + "<"
+            )
             # Check if the string was modified by the first replacement
             if replaced_string != html_string:
                 html_string = replaced_string
@@ -69,7 +73,6 @@ class OverwriteHtml():
             html_string = html_string.replace(placeholder, replacement)
 
         return html_string
-
 
     def modify_statement_tabels(self, second_half: str, Table_output: Dict):
         """Function to use Table results, search for the value in html
@@ -94,7 +97,7 @@ class OverwriteHtml():
             [
                 row[0],
                 row[1],
-                f'<font data-autotag="true" id=xdx_90{random.choice(string.ascii_letters)}_e{row[1]}_{uuid_result}>{row[0]}</font>',
+                f'<font data-autotag="true" id=apex_90{random.choice(string.ascii_letters)}_e{row[1]}_{uuid_result}>{row[0]}</font>',
             ]
             for row in unique_Table_output2
         ]
@@ -122,8 +125,9 @@ class OverwriteHtml():
 
         return second_half
 
-
-    def modify_notespages(self, second_half: str, Notes_output: Dict, table_output_values: List):
+    def modify_notespages(
+        self, second_half: str, Notes_output: Dict, table_output_values: List
+    ):
         """Function to use Notes results, search for the value in html
         and replace them with <font> tag"""
         logger.info("4.2. Overwriting HTML with NOTES tags")
@@ -136,7 +140,7 @@ class OverwriteHtml():
             [
                 row[0],
                 row[1],
-                f'<font data-autotag="true" id=xdx_90{random.choice(string.ascii_letters)}_e{row[1]}_{uuid_result}>{row[0]}</font>',
+                f'<font data-autotag="true" id=apex_90{random.choice(string.ascii_letters)}_e{row[1]}_{uuid_result}>{row[0]}</font>',
             ]
             for row in ml_tags1
             if row[0] not in table_output_values
